@@ -4,7 +4,7 @@ export function readCookie(getInitialPropsContext = {}) {
   const cookieString = getInitialPropsContext.req
     ? getInitialPropsContext.req.headers.cookie
     : document.cookie
-  return cookie.parse(cookieString)
+  return cookie.parse(cookieString || "")
 }
 
 export function writeCookie(

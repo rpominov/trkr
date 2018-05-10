@@ -1,4 +1,5 @@
 import Router from "next/router"
+import getBaseUrl from "./getBaseUrl"
 
 const {APP_KEY} = process.env
 
@@ -18,8 +19,10 @@ export function autoAuthenticate(error, getInitialPropsContext = {}) {
       [
         `name=${encodeURIComponent("TRKR Time Tracker")}`,
         "scope=read,write",
-        `return_url=${encodeURIComponent("http://localhost:3000/login")}`,
         `key=${APP_KEY}`,
+        `return_url=${encodeURIComponent(
+          getBaseUrl(getInitialPropsContext) + "/login",
+        )}`,
       ].join("&")
     redirect(url, getInitialPropsContext)
     return true

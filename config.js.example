@@ -1,7 +1,0 @@
-
-// visit https://trello.com/app-key to get key and token
-export default {
-  key: "...",
-  token: "...",
-  username: "%your Trello username%",
-}

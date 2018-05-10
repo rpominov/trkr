@@ -1,8 +1,13 @@
 {
   "private": true,
   "name": "tracker",
-  "scripts": {},
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
+    "cookie": "^0.3.1",
     "isomorphic-unfetch": "^2.0.0",
     "next": "^6.0.0",
     "prettier": "^1.12.1",

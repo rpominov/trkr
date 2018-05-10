@@ -3,6 +3,7 @@ import Link from "next/link"
 import Layout from "../Layout"
 import api from "../api"
 import TimeRecord from "../TimeRecord"
+import {autoAuthenticate} from "../redirect"
 
 const INCREMENT_BY = 10
 
@@ -27,11 +28,15 @@ function getAllTrkrFieldValues(cards, fieldId) {
 }
 
 export default class extends React.Component {
-  static async getInitialProps({query}) {
-    const board = await api(`boards/${query.id}`, {
+  static async getInitialProps(context) {
+    const board = await api(context, `boards/${context.query.id}`, {
       fields: "name,prefs",
       customFields: "true",
     })
+
+    if (autoAuthenticate(board, context)) {
+      return {}
+    }
 
     if (board.tag === "error") {
       return {error: board}
@@ -43,10 +48,14 @@ export default class extends React.Component {
       return {board: board.result, trkrFieldId}
     }
 
-    const cards = await api(`boards/${query.id}/cards/open`, {
+    const cards = await api(context, `boards/${context.query.id}/cards/open`, {
       customFieldItems: "true",
       fields: "name,shortUrl,idList",
     })
+
+    if (autoAuthenticate(cards, context)) {
+      return {}
+    }
 
     if (cards.tag === "error") {
       return {error: cards}
@@ -73,9 +82,15 @@ export default class extends React.Component {
   async updateTrkrField(cardId, newValue) {
     const {trkrFieldId} = this.props
 
-    await api(`card/${cardId}/customField/${trkrFieldId}/item`, {}, "PUT", {
-      value: {text: newValue},
-    })
+    await api(
+      null,
+      `card/${cardId}/customField/${trkrFieldId}/item`,
+      {},
+      "PUT",
+      {
+        value: {text: newValue},
+      },
+    )
 
     this.setState(s => ({
       trkrFieldValues: {...s.trkrFieldValues, [cardId]: newValue},
@@ -90,10 +105,14 @@ export default class extends React.Component {
       return
     }
 
-    const card = await api(`cards/${currentCard}`, {
+    const card = await api(null, `cards/${currentCard}`, {
       customFieldItems: "true",
       fields: "name",
     })
+
+    if (autoAuthenticate(card)) {
+      return
+    }
 
     if (card.tag === "error") {
       // TODO: save localy?

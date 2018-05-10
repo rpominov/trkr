@@ -3,7 +3,8 @@ import Link from "next/link"
 import Layout from "../Layout"
 import Error from "../Error"
 import api from "../api"
-import config from "../config"
+import {readCookie} from "../cookies"
+import {autoAuthenticate} from "../redirect"
 
 const Board = p => {
   const {board} = p
@@ -41,14 +42,20 @@ const Board = p => {
 }
 
 export default class extends React.Component {
-  static async getInitialProps({req}) {
-    const resp = await api(`members/${config.username}/boards`, {
+  static async getInitialProps(context) {
+    const {username} = readCookie(context)
+
+    const resp = await api(context, `members/me/boards`, {
       filter: "starred",
       fields: "name,id,prefs",
     })
 
     if (resp.tag === "success") {
       return {boards: resp.result}
+    }
+
+    if (autoAuthenticate(resp, context)) {
+      return {}
     }
 
     return {boards: null, error: resp}

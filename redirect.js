@@ -1,7 +1,8 @@
 import Router from "next/router"
+import getConfig from "next/config"
 import getBaseUrl from "./getBaseUrl"
 
-const {APP_KEY} = process.env
+const {appKey} = getConfig().publicRuntimeConfig
 
 export function redirect(target, getInitialPropsContext = {}) {
   if (getInitialPropsContext.res) {
@@ -19,10 +20,10 @@ export function autoAuthenticate(error, getInitialPropsContext = {}) {
       [
         `name=${encodeURIComponent("TRKR Time Tracker")}`,
         "scope=read,write",
-        `key=${APP_KEY}`,
         `return_url=${encodeURIComponent(
           getBaseUrl(getInitialPropsContext) + "/login",
         )}`,
+        `key=${appKey}`,
       ].join("&")
     redirect(url, getInitialPropsContext)
     return true

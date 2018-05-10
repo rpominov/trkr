@@ -1,7 +1,8 @@
 import fetch from "isomorphic-unfetch"
+import getConfig from "next/config"
 import {readCookie} from "./cookies"
 
-const {APP_KEY} = process.env
+const {appKey} = getConfig().publicRuntimeConfig
 
 export default async function api(
   getInitialPropsContext,
@@ -26,7 +27,7 @@ export default async function api(
   let resp
   try {
     resp = await fetch(
-      `https://api.trello.com/1/${path}?${params}&key=${APP_KEY}&token=${token}`,
+      `https://api.trello.com/1/${path}?${params}&key=${appKey}&token=${token}`,
       {method, cache: "no-cache", headers, body},
     )
   } catch (e) {

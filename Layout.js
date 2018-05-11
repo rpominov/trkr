@@ -28,23 +28,31 @@ export default class Layout extends React.Component {
   }
 
   render() {
-    const {children} = this.props
+    const {children, title} = this.props
     const {loading} = this.state
     return (
       <div className="layoutWrap">
         <Head>
-          <title>TRKR</title>
+          <title>{title || "TRKR"}</title>
         </Head>
 
         <style global jsx>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+          body,
+          html {
             font-family: monospace;
             font-size: 16px;
             line-height: 1.2;
             font-weight: normal;
+          }
+
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            font-weight: inherit;
             color: inherit;
             background: none;
             text-decoration: none;

@@ -3,6 +3,7 @@ import Link from "next/link"
 import Layout from "../Layout"
 import api from "../api"
 import TimeRecord from "../TimeRecord"
+import Blink from "../Blink"
 import {autoAuthenticate} from "../redirect"
 
 const INCREMENT_BY = 10
@@ -117,6 +118,7 @@ export default class extends React.Component {
     if (card.tag === "error") {
       // TODO: save localy?
       // TODO: show error in UI?
+      // like "couldn't track 3.43 hours [send now]"
       return
     }
 
@@ -150,8 +152,15 @@ export default class extends React.Component {
       ? "#666"
       : board.prefs.background
 
+    const title =
+      currentCard === null
+        ? "Resting..."
+        : TimeRecord.formatToday(trkrFieldValues[currentCard]) +
+          "h @ " +
+          cards.find(x => x.id === currentCard).name
+
     return (
-      <Layout>
+      <Layout title={title}>
         <style jsx>{`
           h2 {
             margin: 0 0 40px 0;
@@ -160,6 +169,8 @@ export default class extends React.Component {
           h2 span {
             padding: 4px 8px;
             font-size: 30px;
+            line-height: 30px;
+            display: inline-block;
           }
 
           h2 div {
@@ -167,7 +178,7 @@ export default class extends React.Component {
             background-position: center;
             width: 100px;
             height: 100px;
-            margin-bottom: -39px;
+            margin-bottom: -38px;
           }
 
           li {
@@ -177,30 +188,22 @@ export default class extends React.Component {
 
           li input[type="radio"] {
             position: absolute;
+            font-size: 14px;
+            margin-top: 2px;
+            cursor: pointer;
+          }
+
+          li label {
+            cursor: pointer;
           }
 
           li div {
             margin-left: 22px;
-            margin-top: 2px;
           }
 
           li p {
             color: #9a9a9a;
             font-size: 12px;
-          }
-
-          @keyframes blink-animation {
-            0%,
-            100% {
-              opacity: 1;
-            }
-            50% {
-              opacity: 0.3;
-            }
-          }
-
-          .blink {
-            animation: blink-animation 1s linear infinite;
           }
         `}</style>
 
@@ -220,7 +223,7 @@ export default class extends React.Component {
                 id="current-card-radio__rest"
               />
               <div>
-                <label htmlFor="current-card-radio__rest">Rest</label>
+                <label htmlFor="current-card-radio__rest">Rest...</label>
               </div>
             </li>
             {cards.map(x => {
@@ -239,7 +242,18 @@ export default class extends React.Component {
                   />
                   <div>
                     <label htmlFor={elId}>{x.name}</label>
-                    <p>{time}</p>
+                    <p>
+                      {isCurrent
+                        ? time.map(
+                            (x, i) =>
+                              typeof x === "number" ? (
+                                <Blink key={i}>{x}</Blink>
+                              ) : (
+                                x
+                              ),
+                          )
+                        : time}
+                    </p>
                   </div>
                 </li>
               )

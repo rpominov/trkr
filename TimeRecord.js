@@ -32,15 +32,11 @@ const TimeRecord = {
   },
 
   formatTime(seconds) {
-    if (seconds === 0) {
-      return "0s"
+    const tmp = seconds * 100 / 60 / 60
+    if (tmp > 0 && tmp < 1) {
+      return 0.01
     }
-
-    const {h, m, s} = TimeRecord.decomposeTime(seconds)
-
-    return [h > 0 && h + "h", (m > 0 || h > 0) && m + "m", s > 0 && s + "s"]
-      .filter(Boolean)
-      .join(" ")
+    return Math.round(tmp) / 100
   },
 
   getTodayTime(record) {
@@ -53,12 +49,17 @@ const TimeRecord = {
 
   formatTodayRest(text) {
     const record = TimeRecord.parse(text)
-    const today = TimeRecord.getTodayTime(record)
-    const all = TimeRecord.aggregateTime(record)
-    return (
-      TimeRecord.formatTime(all) +
-      (today > 0 ? ` (${TimeRecord.formatTime(today)} today)` : "")
+    const today = TimeRecord.formatTime(TimeRecord.getTodayTime(record))
+    const allFormated = TimeRecord.formatTime(TimeRecord.aggregateTime(record))
+    return [allFormated, allFormated === 1 ? " hour" : " hours"].concat(
+      today > 0 ? [" (", today, " today)"] : [],
     )
+  },
+
+  formatToday(text) {
+    const record = TimeRecord.parse(text)
+    const today = TimeRecord.getTodayTime(record)
+    return TimeRecord.formatTime(today)
   },
 
   parse(text) {

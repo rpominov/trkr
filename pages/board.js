@@ -1,10 +1,11 @@
 import React from "react"
 import Link from "next/link"
 import Layout from "../Layout"
-import api from "../api"
+import Error from "../Error"
+import {ApiMonad} from "../api"
+import {autoAuthenticate} from "../redirect"
 import TimeRecord from "../TimeRecord"
 import Blink from "../Blink"
-import {autoAuthenticate} from "../redirect"
 
 const INCREMENT_BY = 10
 
@@ -30,39 +31,31 @@ function getAllTrkrFieldValues(cards, fieldId) {
 
 export default class extends React.Component {
   static async getInitialProps(context) {
-    const board = await api(context, `boards/${context.query.id}`, {
-      fields: "name,prefs",
-      customFields: "true",
+    return ApiMonad.doAndHandleError(context, function*() {
+      const board = yield ApiMonad.call([
+        `boards/${context.query.id}`,
+        {
+          fields: "name,prefs",
+          customFields: "true",
+        },
+      ])
+
+      const trkrFieldId = getTrkrFieldId(board)
+
+      if (trkrFieldId === null) {
+        return {board, trkrFieldId}
+      }
+
+      const cards = yield ApiMonad.call([
+        `boards/${context.query.id}/cards/open`,
+        {
+          customFieldItems: "true",
+          fields: "name,shortUrl,idList",
+        },
+      ])
+
+      return {board, cards, trkrFieldId}
     })
-
-    if (autoAuthenticate(board, context)) {
-      return {}
-    }
-
-    if (board.tag === "error") {
-      return {error: board}
-    }
-
-    const trkrFieldId = getTrkrFieldId(board.result)
-
-    if (trkrFieldId === null) {
-      return {board: board.result, trkrFieldId}
-    }
-
-    const cards = await api(context, `boards/${context.query.id}/cards/open`, {
-      customFieldItems: "true",
-      fields: "name,shortUrl,idList",
-    })
-
-    if (autoAuthenticate(cards, context)) {
-      return {}
-    }
-
-    if (cards.tag === "error") {
-      return {error: cards}
-    }
-
-    return {board: board.result, cards: cards.result, trkrFieldId}
   }
 
   state = {
@@ -80,24 +73,6 @@ export default class extends React.Component {
     clearInterval(this.intervalId)
   }
 
-  async updateTrkrField(cardId, newValue) {
-    const {trkrFieldId} = this.props
-
-    await api(
-      null,
-      `card/${cardId}/customField/${trkrFieldId}/item`,
-      {},
-      "PUT",
-      {
-        value: {text: newValue},
-      },
-    )
-
-    this.setState(s => ({
-      trkrFieldValues: {...s.trkrFieldValues, [cardId]: newValue},
-    }))
-  }
-
   increment = async () => {
     const {currentCard} = this.state
     const {trkrFieldId} = this.props
@@ -106,33 +81,58 @@ export default class extends React.Component {
       return
     }
 
-    const card = await api(null, `cards/${currentCard}`, {
-      customFieldItems: "true",
-      fields: "name",
-    })
+    const result = await ApiMonad.run(
+      ApiMonad.do(function*() {
+        const card = yield ApiMonad.call([
+          `cards/${currentCard}`,
+          {
+            customFieldItems: "true",
+            fields: "name",
+          },
+        ])
 
-    if (autoAuthenticate(card)) {
+        const newValue = TimeRecord.stringify(
+          TimeRecord.increment(
+            TimeRecord.parse(getTrkrFieldValue(card, trkrFieldId)),
+            INCREMENT_BY,
+          ),
+        )
+
+        yield ApiMonad.call([
+          `card/${currentCard}/customField/${trkrFieldId}/item`,
+          {},
+          "PUT",
+          {
+            value: {text: newValue},
+          },
+        ])
+
+        return newValue
+      }),
+    )
+
+    if (autoAuthenticate(result)) {
       return
     }
 
-    if (card.tag === "error") {
+    if (result.tag === "error") {
       // TODO: save localy?
       // TODO: show error in UI?
       // like "couldn't track 3.43 hours [send now]"
+      alert("couldnt track!")
       return
     }
 
-    const newValue = TimeRecord.stringify(
-      TimeRecord.increment(
-        TimeRecord.parse(getTrkrFieldValue(card.result, trkrFieldId)),
-        INCREMENT_BY,
-      ),
-    )
-
-    await this.updateTrkrField(currentCard, newValue)
+    this.setState(s => ({
+      trkrFieldValues: {...s.trkrFieldValues, [currentCard]: result.result},
+    }))
   }
 
   render() {
+    if (this.props.error) {
+      return <Error error={this.props} />
+    }
+
     const {cards, board, trkrFieldId} = this.props
     const {currentCard, trkrFieldValues} = this.state
 

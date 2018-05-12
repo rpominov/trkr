@@ -2,9 +2,7 @@ import React from "react"
 import Link from "next/link"
 import Layout from "../Layout"
 import Error from "../Error"
-import api from "../api"
-import {readCookie} from "../cookies"
-import {autoAuthenticate} from "../redirect"
+import {ApiMonad} from "../api"
 
 const Board = p => {
   const {board} = p
@@ -43,22 +41,17 @@ const Board = p => {
 
 export default class extends React.Component {
   static async getInitialProps(context) {
-    const {username} = readCookie(context)
+    return ApiMonad.doAndHandleError(context, function*() {
+      const boards = yield ApiMonad.call([
+        `members/me/boards`,
+        {
+          filter: "starred",
+          fields: "name,id,prefs",
+        },
+      ])
 
-    const resp = await api(context, `members/me/boards`, {
-      filter: "starred",
-      fields: "name,id,prefs",
+      return {boards}
     })
-
-    if (resp.tag === "success") {
-      return {boards: resp.result}
-    }
-
-    if (autoAuthenticate(resp, context)) {
-      return {}
-    }
-
-    return {boards: null, error: resp}
   }
 
   render() {

@@ -47,8 +47,17 @@ const TimeRecord = {
     return Object.keys(record).reduce((sum, key) => sum + record[key], 0)
   },
 
-  formatTodayRest(text) {
-    const record = TimeRecord.parse(text)
+  combineRecords(records) {
+    const result = {}
+    records.forEach(record => {
+      Object.keys(record).forEach(key => {
+        result[key] = (result[key] || 0) + record[key]
+      })
+    })
+    return result
+  },
+
+  formatTodayRest(record) {
     const today = TimeRecord.formatTime(TimeRecord.getTodayTime(record))
     const allFormated = TimeRecord.formatTime(TimeRecord.aggregateTime(record))
     return [allFormated, allFormated === 1 ? " hour" : " hours"].concat(

@@ -183,11 +183,23 @@ export default class extends React.Component {
           "h @ " +
           cards.find(x => x.id === currentCard).name
 
+    const combinedTimeRecord = TimeRecord.combineRecords(
+      Object.keys(trkrFieldValues).map(key =>
+        TimeRecord.parse(trkrFieldValues[key]),
+      ),
+    )
+
+    const totalTime = TimeRecord.formatTodayRest(combinedTimeRecord)
+
     return (
       <Layout title={title}>
         <style jsx>{`
           h2 {
-            margin: 0 0 40px 0;
+            margin-bottom: 10px;
+          }
+
+          h2 + .time {
+            margin-bottom: 40px;
           }
 
           h2 span {
@@ -225,7 +237,7 @@ export default class extends React.Component {
             margin-left: 22px;
           }
 
-          li p {
+          .time {
             color: #9a9a9a;
             font-size: 12px;
           }
@@ -252,6 +264,7 @@ export default class extends React.Component {
           <div style={{backgroundImage, backgroundColor}} />
           <span style={{color, background: textBackground}}>{board.name}</span>
         </h2>
+        <p className="time">{totalTime}</p>
 
         {trkrFieldId && (
           <ul>
@@ -290,7 +303,7 @@ export default class extends React.Component {
                       const elId = "current-card-radio__" + x.id
                       const isCurrent = currentCard === x.id
                       const time = TimeRecord.formatTodayRest(
-                        trkrFieldValues[x.id],
+                        TimeRecord.parse(trkrFieldValues[x.id]),
                       )
                       const onChange = () => this.setState({currentCard: x.id})
                       return (
@@ -304,7 +317,7 @@ export default class extends React.Component {
                           />
                           <div>
                             <label htmlFor={elId}>{x.name}</label>
-                            <p>
+                            <p className="time">
                               {isCurrent
                                 ? time.map(
                                     (x, i) =>

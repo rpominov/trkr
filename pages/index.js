@@ -3,6 +3,7 @@ import Link from "next/link"
 import Layout from "../Layout"
 import Error from "../Error"
 import {ApiMonad} from "../api"
+import UntrackedTime from "../UntrackedTime"
 
 const Board = p => {
   const {board} = p
@@ -60,6 +61,7 @@ export default class extends React.Component {
     if (boards) {
       return (
         <Layout>
+          <UntrackedTime />
           <ul>{boards.map(b => <Board board={b} key={b.id} />)}</ul>
         </Layout>
       )

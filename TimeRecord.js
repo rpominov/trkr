@@ -32,11 +32,11 @@ const TimeRecord = {
   },
 
   formatTime(seconds) {
-    const tmp = seconds * 100 / 60 / 60
+    const tmp = seconds * 1000 / 60 / 60
     if (tmp > 0 && tmp < 1) {
-      return 0.01
+      return 0.001
     }
-    return Math.round(tmp) / 100
+    return Math.round(tmp) / 1000
   },
 
   getTodayTime(record) {

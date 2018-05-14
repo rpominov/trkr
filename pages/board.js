@@ -8,21 +8,10 @@ import {autoAuthenticate} from "../redirect"
 import TimeRecord from "../TimeRecord"
 import Blink from "../Blink"
 import Favicon from "../Favicon"
+import {track, getTrkrFieldId, getTrkrFieldValue} from "../localTimeStorage"
 
 const INCREMENT_BY = 10
 const COLLAPSED_LISTS = "coli"
-
-function getTrkrFieldId(board) {
-  const trkrField = board.customFields.filter(f => f.name === "trkr")[0]
-  return trkrField ? trkrField.id : null
-}
-
-function getTrkrFieldValue(card, fieldId) {
-  const field = card.customFieldItems.filter(
-    f => f.idCustomField === fieldId,
-  )[0]
-  return field ? field.value.text : ""
-}
 
 function getAllTrkrFieldValues(cards, fieldId) {
   const result = {}
@@ -93,51 +82,59 @@ export default class extends React.Component {
       return
     }
 
-    const result = await ApiMonad.run(
-      ApiMonad.do(function*() {
-        const card = yield ApiMonad.call([
-          `cards/${currentCard}`,
-          {
-            customFieldItems: "true",
-            fields: "name",
-          },
-        ])
+    const result = await track(currentCard, INCREMENT_BY, trkrFieldId)
 
-        const newValue = TimeRecord.stringify(
-          TimeRecord.increment(
-            TimeRecord.parse(getTrkrFieldValue(card, trkrFieldId)),
-            INCREMENT_BY,
-          ),
-        )
-
-        yield ApiMonad.call([
-          `card/${currentCard}/customField/${trkrFieldId}/item`,
-          {},
-          "PUT",
-          {
-            value: {text: newValue},
-          },
-        ])
-
-        return newValue
-      }),
-    )
-
-    if (autoAuthenticate(result)) {
-      return
+    if (result !== null) {
+      this.setState(s => ({
+        trkrFieldValues: {...s.trkrFieldValues, [currentCard]: result},
+      }))
     }
 
-    if (result.tag === "error") {
-      // TODO: save localy?
-      // TODO: show error in UI?
-      // like "couldn't track 3.43 hours [send now]"
-      alert("couldnt track!")
-      return
-    }
+    // const result = await ApiMonad.run(
+    //   ApiMonad.do(function*() {
+    //     const card = yield ApiMonad.call([
+    //       `cards/${currentCard}`,
+    //       {
+    //         customFieldItems: "true",
+    //         fields: "name",
+    //       },
+    //     ])
 
-    this.setState(s => ({
-      trkrFieldValues: {...s.trkrFieldValues, [currentCard]: result.result},
-    }))
+    //     const newValue = TimeRecord.stringify(
+    //       TimeRecord.increment(
+    //         TimeRecord.parse(getTrkrFieldValue(card, trkrFieldId)),
+    //         INCREMENT_BY,
+    //       ),
+    //     )
+
+    //     yield ApiMonad.call([
+    //       `card/${currentCard}/customField/${trkrFieldId}/item`,
+    //       {},
+    //       "PUT",
+    //       {
+    //         value: {text: newValue},
+    //       },
+    //     ])
+
+    //     return newValue
+    //   }),
+    // )
+
+    // if (autoAuthenticate(result)) {
+    //   return
+    // }
+
+    // if (result.tag === "error") {
+    //   // TODO: save localy?
+    //   // TODO: show error in UI?
+    //   // like "couldn't track 3.43 hours [send now]"
+    //   alert("couldnt track!")
+    //   return
+    // }
+
+    // this.setState(s => ({
+    //   trkrFieldValues: {...s.trkrFieldValues, [currentCard]: result.result},
+    // }))
   }
 
   setCollapsed(listId, collapsed) {
@@ -185,9 +182,7 @@ export default class extends React.Component {
           cards.find(x => x.id === currentCard).name
 
     const combinedTimeRecord = TimeRecord.combineRecords(
-      Object.keys(trkrFieldValues).map(key =>
-        TimeRecord.parse(trkrFieldValues[key]),
-      ),
+      Object.values(trkrFieldValues).map(TimeRecord.parse),
     )
 
     const totalTime = TimeRecord.formatTodayRest(combinedTimeRecord)

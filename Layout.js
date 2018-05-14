@@ -3,6 +3,7 @@ import Head from "next/head"
 import Router from "next/router"
 import Link from "next/link"
 import Changing from "./Changing"
+import Favicon from "./Favicon"
 
 export default class Layout extends React.Component {
   state = {loading: false}
@@ -35,6 +36,8 @@ export default class Layout extends React.Component {
         <Head>
           <title>{title || "TRKR"}</title>
         </Head>
+
+        <Favicon />
 
         <style global jsx>{`
           body,

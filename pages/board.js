@@ -7,6 +7,7 @@ import {readCookie, writeCookie} from "../cookies"
 import {autoAuthenticate} from "../redirect"
 import TimeRecord from "../TimeRecord"
 import Blink from "../Blink"
+import Favicon from "../Favicon"
 
 const INCREMENT_BY = 10
 const COLLAPSED_LISTS = "coli"
@@ -193,6 +194,8 @@ export default class extends React.Component {
 
     return (
       <Layout title={title}>
+        {currentCard !== null && <Favicon dynamic />}
+
         <style jsx>{`
           h2 {
             margin-bottom: 10px;

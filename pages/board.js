@@ -189,7 +189,7 @@ export default class extends React.Component {
 
     return (
       <Layout title={title}>
-        {currentCard !== null && <Favicon dynamic />}
+        <Favicon animated={currentCard !== null} />
 
         <style jsx>{`
           h2 {

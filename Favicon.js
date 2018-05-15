@@ -1,19 +1,21 @@
 import React from "react"
 import Head from "next/head"
 
+const staticIcon = require("./static/favicon/icon-0.png")
+
 const frames = [
-  "/static/favicon/icon-1.png",
-  "/static/favicon/icon-2.png",
-  "/static/favicon/icon-3.png",
-  "/static/favicon/icon-4.png",
-  "/static/favicon/icon-5.png",
-  "/static/favicon/icon-6.png",
-  "/static/favicon/icon-7.png",
-  "/static/favicon/icon-8.png",
-  "/static/favicon/icon-9.png",
-  "/static/favicon/icon-10.png",
-  "/static/favicon/icon-11.png",
-  "/static/favicon/icon-12.png",
+  require("./static/favicon/icon-1.png"),
+  require("./static/favicon/icon-2.png"),
+  require("./static/favicon/icon-3.png"),
+  require("./static/favicon/icon-4.png"),
+  require("./static/favicon/icon-5.png"),
+  require("./static/favicon/icon-6.png"),
+  require("./static/favicon/icon-7.png"),
+  require("./static/favicon/icon-8.png"),
+  require("./static/favicon/icon-9.png"),
+  require("./static/favicon/icon-10.png"),
+  require("./static/favicon/icon-11.png"),
+  require("./static/favicon/icon-12.png"),
 ]
 
 export default class Layout extends React.Component {
@@ -22,25 +24,27 @@ export default class Layout extends React.Component {
   }
 
   componentDidMount() {
-    if (this.props.dynamic) {
-      this.intervalId = setInterval(() => {
+    this.intervalId = setInterval(() => {
+      if (this.props.animated) {
         const {currentFrame} = this.state
         this.setState({currentFrame: (currentFrame + 1) % frames.length})
-      }, 240)
-    }
+      }
+    }, 240)
   }
 
   componentWillUnmount() {
-    if (this.intervalId !== undefined) {
-      clearTimeout(this.intervalId)
-    }
+    clearTimeout(this.intervalId)
   }
 
   render() {
+    const {animated} = this.props
     const {currentFrame} = this.state
+
+    const image = animated ? frames[currentFrame] : staticIcon
+
     return (
       <Head>
-        <link rel="icon" type="image/png" href={frames[currentFrame]} />
+        <link rel="icon" type="image/png" href={image} />
       </Head>
     )
   }

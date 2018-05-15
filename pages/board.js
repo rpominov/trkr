@@ -8,18 +8,10 @@ import {autoAuthenticate} from "../redirect"
 import TimeRecord from "../TimeRecord"
 import Blink from "../Blink"
 import Favicon from "../Favicon"
-import {track, getTrkrFieldId, getTrkrFieldValue} from "../localTimeStorage"
+import {track, getTrkrFieldId, getAllTrkrRecords} from "../timeStorage"
 
 const INCREMENT_BY = 10
 const COLLAPSED_LISTS = "coli"
-
-function getAllTrkrFieldValues(cards, fieldId) {
-  const result = {}
-  cards.forEach(card => {
-    result[card.id] = getTrkrFieldValue(card, fieldId)
-  })
-  return result
-}
 
 export default class extends React.Component {
   static async getInitialProps(context) {
@@ -60,8 +52,8 @@ export default class extends React.Component {
 
   state = {
     currentCard: null,
-    trkrFieldValues: this.props.trkrFieldId
-      ? getAllTrkrFieldValues(this.props.cards, this.props.trkrFieldId)
+    records: this.props.trkrFieldId
+      ? getAllTrkrRecords(this.props.cards, this.props.trkrFieldId)
       : {},
     collapsedLists: this.props.initialCollapsedLists,
   }
@@ -84,57 +76,15 @@ export default class extends React.Component {
 
     const result = await track(currentCard, INCREMENT_BY, trkrFieldId)
 
-    if (result !== null) {
-      this.setState(s => ({
-        trkrFieldValues: {...s.trkrFieldValues, [currentCard]: result},
-      }))
-    }
-
-    // const result = await ApiMonad.run(
-    //   ApiMonad.do(function*() {
-    //     const card = yield ApiMonad.call([
-    //       `cards/${currentCard}`,
-    //       {
-    //         customFieldItems: "true",
-    //         fields: "name",
-    //       },
-    //     ])
-
-    //     const newValue = TimeRecord.stringify(
-    //       TimeRecord.increment(
-    //         TimeRecord.parse(getTrkrFieldValue(card, trkrFieldId)),
-    //         INCREMENT_BY,
-    //       ),
-    //     )
-
-    //     yield ApiMonad.call([
-    //       `card/${currentCard}/customField/${trkrFieldId}/item`,
-    //       {},
-    //       "PUT",
-    //       {
-    //         value: {text: newValue},
-    //       },
-    //     ])
-
-    //     return newValue
-    //   }),
-    // )
-
-    // if (autoAuthenticate(result)) {
-    //   return
-    // }
-
-    // if (result.tag === "error") {
-    //   // TODO: save localy?
-    //   // TODO: show error in UI?
-    //   // like "couldn't track 3.43 hours [send now]"
-    //   alert("couldnt track!")
-    //   return
-    // }
-
-    // this.setState(s => ({
-    //   trkrFieldValues: {...s.trkrFieldValues, [currentCard]: result.result},
-    // }))
+    const newRecord = this.setState(s => ({
+      records: {
+        ...s.records,
+        [currentCard]: TimeRecord.combineRecords([
+          s.records[currentCard],
+          result,
+        ]),
+      },
+    }))
   }
 
   setCollapsed(listId, collapsed) {
@@ -156,7 +106,7 @@ export default class extends React.Component {
     }
 
     const {cards, board, trkrFieldId, lists} = this.props
-    const {currentCard, trkrFieldValues, collapsedLists} = this.state
+    const {currentCard, records, collapsedLists} = this.state
 
     const color =
       board.prefs.backgroundBrightness === "dark" ? "white" : "black"
@@ -177,15 +127,13 @@ export default class extends React.Component {
     const title =
       currentCard === null
         ? "Resting..."
-        : TimeRecord.formatToday(trkrFieldValues[currentCard]) +
+        : TimeRecord.formatToday(records[currentCard]) +
           "h @ " +
           cards.find(x => x.id === currentCard).name
 
-    const combinedTimeRecord = TimeRecord.combineRecords(
-      Object.values(trkrFieldValues).map(TimeRecord.parse),
+    const totalTime = TimeRecord.formatTodayRest(
+      TimeRecord.combineRecords(Object.values(records)),
     )
-
-    const totalTime = TimeRecord.formatTodayRest(combinedTimeRecord)
 
     return (
       <Layout title={title}>
@@ -287,7 +235,7 @@ export default class extends React.Component {
             return (
               <div key={l.id} className="list-wrap">
                 <h3>
-                  {l.name}{" "}
+                  {l.name}
                   <button
                     className="toggle-collapse"
                     onClick={() => this.setCollapsed(l.id, !collapsed)}
@@ -300,9 +248,17 @@ export default class extends React.Component {
                     {cards.filter(x => x.idList === l.id).map(x => {
                       const elId = "current-card-radio__" + x.id
                       const isCurrent = currentCard === x.id
-                      const time = TimeRecord.formatTodayRest(
-                        TimeRecord.parse(trkrFieldValues[x.id]),
-                      )
+                      const time = TimeRecord.formatTodayRest(records[x.id])
+                      const timeEl = isCurrent
+                        ? time.map(
+                            (x, i) =>
+                              typeof x === "number" ? (
+                                <Blink key={i}>{x}</Blink>
+                              ) : (
+                                x
+                              ),
+                          )
+                        : time
                       const onChange = () => this.setState({currentCard: x.id})
                       return (
                         <li key={x.id}>
@@ -315,18 +271,7 @@ export default class extends React.Component {
                           />
                           <div>
                             <label htmlFor={elId}>{x.name}</label>
-                            <p className="time">
-                              {isCurrent
-                                ? time.map(
-                                    (x, i) =>
-                                      typeof x === "number" ? (
-                                        <Blink key={i}>{x}</Blink>
-                                      ) : (
-                                        x
-                                      ),
-                                  )
-                                : time}
-                            </p>
+                            <p className="time">{timeEl}</p>
                           </div>
                         </li>
                       )

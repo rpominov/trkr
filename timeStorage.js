@@ -10,9 +10,25 @@ export function getTrkrFieldValue(card, fieldId) {
   return field ? field.value.text : ""
 }
 
+export function getTrkrRecord(card, fieldId) {
+  return TimeRecord.parse(getTrkrFieldValue(card, fieldId))
+}
+
 export function getTrkrFieldId(board) {
   const trkrField = board.customFields.filter(f => f.name === "trkr")[0]
   return trkrField ? trkrField.id : null
+}
+
+export function getAllTrkrRecords(cards, fieldId) {
+  const localData = getLocalData()
+  const result = {}
+  cards.forEach(card => {
+    result[card.id] = TimeRecord.combineRecords([
+      getTrkrRecord(card, fieldId),
+      localData[card.id] || {},
+    ])
+  })
+  return result
 }
 
 async function track_(cardId, recordToAppend, trkrFieldId = null) {
@@ -36,7 +52,7 @@ async function track_(cardId, recordToAppend, trkrFieldId = null) {
 
       const newValue = TimeRecord.stringify(
         TimeRecord.combineRecords([
-          TimeRecord.parse(getTrkrFieldValue(card, trkrFieldId)),
+          getTrkrRecord(card, trkrFieldId),
           recordToAppend,
         ]),
       )
@@ -60,26 +76,32 @@ export async function track(cardId, timeAmmount, trkrFieldId) {
   const result = await track_(cardId, recordToAppend, trkrFieldId)
 
   if (result.tag === "error") {
-    const currentData = getLocalData()
-    const currentCardData = currentData[cardId] || {}
-    const newCardData = TimeRecord.combineRecords([
-      currentCardData,
+    const localData = getLocalData()
+    const localCardData = localData[cardId] || {}
+    const newLocalCardData = TimeRecord.combineRecords([
+      localCardData,
       recordToAppend,
     ])
-    const newData = {...currentData, [cardId]: newCardData}
-    setLocalData(newData)
-    return null
+    setLocalData({...localData, [cardId]: newLocalCardData})
   }
 
-  return result.result
+  return recordToAppend
 }
 
 function getLocalData() {
+  if (!process.browser) {
+    return {}
+  }
+
   const data = localStorage.getItem(UNTRACKED_TIME)
   return data ? JSON.parse(data) : {}
 }
 
 function setLocalData(data) {
+  if (!process.browser) {
+    return
+  }
+
   localStorage.setItem(UNTRACKED_TIME, JSON.stringify(data))
 }
 

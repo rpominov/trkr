@@ -4,6 +4,7 @@ import Router from "next/router"
 import Link from "next/link"
 import Changing from "./Changing"
 import Favicon from "./Favicon"
+import UntrackedTime from "./UntrackedTime"
 
 export default class Layout extends React.Component {
   state = {loading: false}
@@ -75,6 +76,9 @@ export default class Layout extends React.Component {
           h1 {
             font-weight: bold;
             font-size: 24px;
+          }
+
+          header {
             margin-bottom: 20px;
           }
         `}</style>
@@ -87,7 +91,9 @@ export default class Layout extends React.Component {
               </h1>
             </a>
           </Link>
+          <UntrackedTime />
         </header>
+
         <main>{children}</main>
       </div>
     )

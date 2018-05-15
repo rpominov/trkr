@@ -65,8 +65,7 @@ const TimeRecord = {
     )
   },
 
-  formatToday(text) {
-    const record = TimeRecord.parse(text)
+  formatToday(record) {
     const today = TimeRecord.getTodayTime(record)
     return TimeRecord.formatTime(today)
   },

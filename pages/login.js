@@ -1,5 +1,4 @@
 import React from "react"
-import Layout from "../Layout"
 import {writeCookie} from "../cookies"
 import {redirect} from "../redirect"
 
@@ -11,6 +10,6 @@ export default class extends React.Component {
   }
 
   render() {
-    return <Layout>redirecting...</Layout>
+    return <div>redirecting...</div>
   }
 }

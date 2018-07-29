@@ -1,4 +1,10 @@
-module.exports = {
+const withCSS = require("@zeit/next-css")
+
+module.exports = withCSS({
+  cssModules: true,
+
+  pageExtensions: ["js", "bs.js"],
+
   publicRuntimeConfig: {
     appKey: process.env.APP_KEY,
   },
@@ -19,4 +25,4 @@ module.exports = {
 
     return config
   },
-}
+})

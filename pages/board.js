@@ -1,10 +1,8 @@
 import React from "react"
-import Link from "next/link"
-import Layout from "../Layout"
+import Head from "next/head"
 import Error from "../Error"
 import {ApiMonad} from "../api"
 import {readCookie, writeCookie} from "../cookies"
-import {autoAuthenticate} from "../redirect"
 import TimeRecord from "../TimeRecord"
 import Blink from "../Blink"
 import Favicon from "../Favicon"
@@ -136,8 +134,12 @@ export default class extends React.Component {
     )
 
     return (
-      <Layout title={title}>
+      <div>
         <Favicon animated={currentCard !== null} />
+
+        <Head>
+          <title>{title}</title>
+        </Head>
 
         <style jsx>{`
           h2 {
@@ -284,7 +286,7 @@ export default class extends React.Component {
 
         {!trkrFieldId &&
           'Create the "trkr" custom field in the board before you can use it with TRKR.'}
-      </Layout>
+      </div>
     )
   }
 }

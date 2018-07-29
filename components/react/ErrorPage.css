@@ -1,0 +1,10 @@
+.box {
+  border-left: solid 3px red;
+  padding-left: 1em;
+}
+
+.box h2 {
+  color: red;
+  font-size: 1.4em;
+  margin-bottom: 1em;
+}

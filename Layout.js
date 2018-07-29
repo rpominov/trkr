@@ -2,7 +2,7 @@ import React from "react"
 import Head from "next/head"
 import Router from "next/router"
 import Link from "next/link"
-import Changing from "./Changing"
+import Distorted from "./components/react/Distorted.bs"
 import Favicon from "./Favicon"
 import UntrackedTime from "./UntrackedTime"
 
@@ -30,15 +30,15 @@ export default class Layout extends React.Component {
   }
 
   render() {
-    const {children, title} = this.props
+    const {children} = this.props
     const {loading} = this.state
     return (
       <div className="layoutWrap">
-        <Head>
-          <title>{title || "TRKR"}</title>
-        </Head>
-
         <Favicon />
+
+        <Head>
+          <title>TRKR</title>
+        </Head>
 
         <style global jsx>{`
           body,
@@ -86,9 +86,7 @@ export default class Layout extends React.Component {
         <header>
           <Link href="/">
             <a>
-              <h1>
-                {loading ? <Changing text="TRKR" period={100} /> : "TRKR"}
-              </h1>
+              <h1>{loading ? <Distorted text="TRKR" /> : "TRKR"}</h1>
             </a>
           </Link>
           <UntrackedTime />

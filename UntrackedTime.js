@@ -1,6 +1,6 @@
 import React from "react"
 import TimeRecord from "./TimeRecord"
-import Changing from "./Changing"
+import Distorted from "./components/react/Distorted.bs"
 import {getUntrackedTime, reSend} from "./timeStorage"
 
 export default class UntrackedTime extends React.Component {
@@ -65,11 +65,7 @@ export default class UntrackedTime extends React.Component {
           time to the server.
         </p>
         <button onClick={this.handleClick} disabled={sending}>
-          {sending ? (
-            <Changing text="Try again now" period={100} />
-          ) : (
-            "Try again now"
-          )}
+          {sending ? <Distorted text="Try again now" /> : "Try again now"}
         </button>
       </div>
     )

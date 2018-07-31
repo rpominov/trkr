@@ -53,5 +53,5 @@ let loader =
 
 let default =
   Next.Page.create(~component, ~loader, props =>
-    {...component, render: _self => Util.renderError(props, render)}
+    {...component, render: _self => ErrorPage.renderError(props, render)}
   );

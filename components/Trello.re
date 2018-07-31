@@ -77,19 +77,20 @@ let fetch =
 };
 
 module Monad = {
-  type apiCall('a) =
+  type t('a) =
     option(Next.LoadingContext.t) => PromiseResult.t('a, failure);
 
-  let pure = (x: 'a) : apiCall('a) => _ => PromiseResult.ok(x);
+  let pure = (x: 'a) : t('a) => _ => PromiseResult.ok(x);
+  let error = (err: failure) : t('a) => _ => PromiseResult.error(err);
 
-  let map = (f: 'a => 'b, call: apiCall('a)) : apiCall('b) =>
+  let map = (f: 'a => 'b, call: t('a)) : t('b) =>
     ctx => call(ctx) |> PromiseResult.map(f);
 
-  let flatMap = (f: 'a => apiCall('b), call: apiCall('a)) : apiCall('b) =>
+  let flatMap = (f: 'a => t('b), call: t('a)) : t('b) =>
     ctx => call(ctx) |> PromiseResult.flatMap(x => f(x, ctx));
 
   /* TODO: handle Unauthenticated here */
-  let makeLoader = (call: apiCall('a), context) => call(Some(context));
+  let makeLoader = (call: t('a), context) => call(Some(context));
 };
 
 module Board = {
@@ -215,6 +216,12 @@ module Card = {
     card.customFieldItems
     |> Js.Array.find(x => x.CustomFieldItem.idCustomField === fieldId)
     |> Js.Option.map((. x) => x.CustomFieldItem.value);
+
+  let getTimeRecord = (~fieldId: string, card: t) =>
+    switch (card |> getCustomField(~fieldId)) {
+    | Some(x) => TimeRecord.parse(x)
+    | None => TimeRecord.empty()
+    };
 };
 
 module List = {

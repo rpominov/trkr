@@ -87,85 +87,74 @@ let totalUntracked = () =>
   |> TimeRecord.combineRecords
   |> TimeRecord.aggregateTime;
 
+let fetchTrkrFieldId = (~boardId: string) : Trello.Monad.t(string) =>
+  Trello.Monad.(
+    Trello.fetchBoard(boardId)
+    |> flatMap(board =>
+         switch (board |> Trello.Board.getTrkrFieldId) {
+         | Some(id) => pure(id)
+         | None =>
+           error(
+             Trello.CustomFailure(
+               "The Trello board \""
+               ++ board.Trello.Board.name
+               ++ "\" doensn't have a \"trkr\" custom field.",
+             ),
+           )
+         }
+       )
+  );
+
 let track' =
-    (~cardId: string, ~append: TimeRecord.t, ~fieldId: option(string)=?, ()) => {
-  let tmp = 1;
-  ();
+    (~fieldId: option(string)=?, ~cardId: string, append: TimeRecord.t) =>
+  None
+  |> Trello.Monad.(
+       Trello.fetchCard(cardId)
+       |> flatMap(card =>
+            (
+              switch (fieldId) {
+              | Some(x) => pure(x)
+              | None => fetchTrkrFieldId(~boardId=card.Trello.Card.idBoard)
+              }
+            )
+            |> flatMap(fieldId =>
+                 Trello.setCustomField(
+                   ~cardId=card.Trello.Card.id,
+                   ~fieldId,
+                   ~newValue=
+                     TimeRecord.stringify(
+                       TimeRecord.combineRecords([|
+                         Trello.Card.getTimeRecord(~fieldId, card),
+                         append,
+                       |]),
+                     ),
+                 )
+               )
+          )
+     );
+
+let track = (~fieldId: option(string)=?, ~cardId: string, timeAmmount: int) => {
+  let append = TimeRecord.increment(TimeRecord.empty(), timeAmmount);
+  track'(~cardId, ~fieldId?, append)
+  |> PromiseResult.recover(_ => {
+       let localData = readLocalStorage();
+       let newCardData =
+         switch (Js.Dict.get(localData, cardId)) {
+         | Some(data) => TimeRecord.combineRecords([|data, append|])
+         | None => append
+         };
+       Js.Dict.set(localData, cardId, newCardData);
+       writeLocalStorage(localData);
+     })
+  |> PromiseResult.map(_ => append);
 };
 
-/*
-
- async function track_(cardId, recordToAppend, trkrFieldId = null) {
-   return ApiMonad.run(
-     ApiMonad.do(function*() {
-       const card = yield ApiMonad.call([
-         `cards/${cardId}`,
-         {
-           customFieldItems: "true",
-           fields: "name,idBoard",
-         },
-       ])
-
-       if (trkrFieldId === null) {
-         const board = yield ApiMonad.call([
-           `boards/${card.idBoard}`,
-           {fields: "name", customFields: "true"},
-         ])
-         trkrFieldId = getTrkrFieldId(board)
-       }
-
-       const newValue = TimeRecord.stringify(
-         TimeRecord.combineRecords([
-           getTrkrRecord(card, trkrFieldId),
-           recordToAppend,
-         ]),
+let reSend = () =>
+  PromiseResult.(
+    readLocalStorage()
+    |> Js.Dict.entries
+    |> iterate(((cardId, record)) =>
+         track'(~cardId, record) |> map(_ => removeLocalRecord(~cardId))
        )
-
-       yield ApiMonad.call([
-         `card/${cardId}/customField/${trkrFieldId}/item`,
-         {},
-         "PUT",
-         {
-           value: {text: newValue},
-         },
-       ])
-
-       return newValue
-     }),
-   )
- }
-
- export async function track(cardId, timeAmmount, trkrFieldId) {
-   const recordToAppend = TimeRecord.increment({}, timeAmmount)
-   const result = await track_(cardId, recordToAppend, trkrFieldId)
-
-   if (result.tag === "error") {
-     const localData = getLocalData()
-     const localCardData = localData[cardId] || {}
-     const newLocalCardData = TimeRecord.combineRecords([
-       localCardData,
-       recordToAppend,
-     ])
-     setLocalData({...localData, [cardId]: newLocalCardData})
-   }
-
-   return recordToAppend
- }
-
- export async function reSend() {
-   const localData = getLocalData()
-   const cardIds = Object.keys(localData)
-
-   for (const id of cardIds) {
-     const recordToAppend = localData[id]
-     const result = await track_(id, recordToAppend)
-     if (result.tag === "error") {
-       return result
-     }
-     removeLocalDataForCard(id)
-   }
-
-   return null
- }
-
- */
+    |> map(_ => ())
+  );

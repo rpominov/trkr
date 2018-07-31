@@ -24,3 +24,12 @@ let make = (~error: Trello.failure, _children) => {
     </div>;
   },
 };
+
+let renderError = (props, regularRender) => {
+  let data = props |. Next.Page.Props.data;
+
+  switch (data) {
+  | Belt.Result.Ok(data') => regularRender(data')
+  | Belt.Result.Error(error) => make(~error, [||]) |> ReasonReact.element
+  };
+};

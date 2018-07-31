@@ -14,12 +14,3 @@ let reExec = (re, str) =>
   | Some(x) => x |> Js.Re.captures |> Js.Array.map(Js.Nullable.toOption)
   | None => [||]
   };
-
-let renderError = (props, regularRender) => {
-  let data = props |. Next.Page.Props.data;
-
-  switch (data) {
-  | Belt.Result.Ok(data') => regularRender(data')
-  | Belt.Result.Error(error) => <ErrorPage error />
-  };
-};

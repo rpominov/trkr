@@ -28,6 +28,16 @@ let flatMap = (f: 'a => t('b, 'c), promise: t('a, 'c)) : t('b, 'c) =>
        | R.Error(_) as e => e |> P.resolve,
      );
 
+let flatMapError = (f: 'b => t('a, 'b), promise: t('a, 'b)) : t('a, 'b) =>
+  promise
+  |> P.then_(
+       fun
+       | R.Ok(_) as ok => ok |> P.resolve
+       | R.Error(e) => f(e),
+     );
+
+let recover = f => flatMapError(err => err |> f |> ok);
+
 let tryMap = (mapOk, mapExn, promise) => {
   let mapper = x =>
     P.resolve(
@@ -36,4 +46,14 @@ let tryMap = (mapOk, mapExn, promise) => {
       },
     );
   flatMap(mapper, promise);
+};
+
+let iterate = (f, items) => {
+  let rec step = (i, acc) =>
+    if (i >= Js.Array.length(items)) {
+      ok(acc);
+    } else {
+      f(items[i]) |> flatMap(x => step(i + 1, Js.Array.concat(acc, [|x|])));
+    };
+  step(0, [||]);
 };

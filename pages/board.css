@@ -1,0 +1,64 @@
+.wrap h2 {
+  margin-bottom: 10px;
+}
+
+.wrap h2 + .time {
+  margin-bottom: 40px;
+}
+
+.wrap h2 span {
+  padding: 4px 8px;
+  font-size: 30px;
+  line-height: 30px;
+  display: inline-block;
+}
+
+.wrap h2 div {
+  background-size: cover;
+  background-position: center;
+  width: 100px;
+  height: 100px;
+  margin-bottom: -38px;
+}
+
+.wrap li {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.wrap li input[type="radio"] {
+  position: absolute;
+  font-size: 14px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.wrap li label {
+  cursor: pointer;
+}
+
+.wrap li div {
+  margin-left: 22px;
+}
+
+.time {
+  color: #9a9a9a;
+  font-size: 12px;
+}
+
+.listWrap {
+  margin-bottom: 20px;
+}
+
+.toggleCollapse {
+  float: right;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+}
+
+.wrap h3 {
+  background: #87bdf5;
+  color: white;
+  margin-bottom: 10px;
+}

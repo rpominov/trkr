@@ -4,6 +4,7 @@ let appKey =
   Js.Dict.get(Next.Config.(getConfig() |. publicRuntimeConfig), "appKey");
 
 type failure =
+  | NotFound
   | AppKeyIsNotSet
   | Unauthenticated
   | NetworkProblem
@@ -11,74 +12,9 @@ type failure =
   | BadResponseBody(string)
   | CustomFailure(string);
 
-let fetch =
-    (
-      ~body: option(string)=?,
-      ~params: Js.Array.t((string, string)),
-      ~method: Fetch.requestMethod=Fetch.Get,
-      ~decoder: Js.Json.t => 'a,
-      path: string,
-      context: option(Next.LoadingContext.t),
-    )
-    : PromiseResult.t('a, failure) => {
-  let token = Js.Dict.get(Next.readCookie(~context?, ()), "token");
-
-  switch (token, appKey) {
-  | (_, None) => PromiseResult.error(AppKeyIsNotSet)
-  | (None, _) => PromiseResult.error(Unauthenticated)
-  | (Some(token), Some(appKey)) =>
-    let params' =
-      Js.Array.(
-        params
-        |> concat([|("key", appKey), ("token", token)|])
-        |> map(((key, value)) => key ++ "=" ++ value)
-        |> joinWith("&")
-      );
-
-    let url = "https://api.trello.com/1/" ++ path ++ "?" ++ params';
-
-    let requestInit =
-      switch (body) {
-      | Some(body) =>
-        Fetch.RequestInit.make(
-          ~method_=method,
-          ~body=Fetch.BodyInit.make(body),
-          ~headers=
-            Fetch.HeadersInit.make({"Content-Type": "application/json"}),
-          (),
-        )
-      | None => Fetch.RequestInit.make(~method_=method, ())
-      };
-
-    let result =
-      PromiseResult.(
-        Fetch.fetchWithInit(url, requestInit)
-        |> wrap(_ => NetworkProblem)
-        |> flatMap(resp =>
-             switch (resp |. Fetch.Response.status) {
-             | 200 => resp |. Fetch.Response.text |> wrap(_ => NetworkProblem)
-             | 401 => error(Unauthenticated)
-             | s => error(BadStatus(s))
-             }
-           )
-        |> tryMap(
-             text => text |> Json.parseOrRaise |> decoder,
-             (e, text) =>
-               switch (e) {
-               | Json.Decode.DecodeError(str) => BadResponseBody(str)
-               | Json.ParseError(str) => BadResponseBody(str)
-               | _ => BadResponseBody(text)
-               },
-           )
-      );
-
-    result;
-  };
-};
-
 module Monad = {
-  type t('a) =
-    option(Next.LoadingContext.t) => PromiseResult.t('a, failure);
+  type result('a) = PromiseResult.t('a, failure);
+  type t('a) = option(Next.LoadingContext.t) => result('a);
 
   let pure = (x: 'a) : t('a) => _ => PromiseResult.ok(x);
   let error = (err: failure) : t('a) => _ => PromiseResult.error(err);
@@ -89,9 +25,108 @@ module Monad = {
   let flatMap = (f: 'a => t('b), call: t('a)) : t('b) =>
     ctx => call(ctx) |> PromiseResult.flatMap(x => f(x, ctx));
 
-  /* TODO: handle Unauthenticated here */
-  let makeLoader = (call: t('a), context) => call(Some(context));
+  let withContext = (f: option(Next.LoadingContext.t) => 'a) : t('a) =>
+    context => PromiseResult.ok(f(context));
 };
+
+let redirectToAuthentication = context => {
+  let params =
+    [|
+      ("name", "TRKR Time Tracker"),
+      ("scope", "read,write"),
+      ("return_url", Next.getBaseUrl(~context?, ()) ++ "/login"),
+      ("key", appKey |> Js.Option.getExn),
+    |]
+    |> Js.Array.map(((k, v)) => k ++ "=" ++ Js.Global.encodeURIComponent(v));
+
+  let url =
+    "https://trello.com/1/authorize?" ++ (params |> Js.Array.joinWith("&"));
+
+  Next.redirect(~context?, url);
+};
+
+let handleSomeErrors =
+    (context, result: Monad.result('a))
+    : Monad.result('a) =>
+  result
+  |> PromiseResult.flatMapError(err => {
+       switch (err) {
+       | Unauthenticated => redirectToAuthentication(context)
+       | NotFound => Next.setResponseStatusCode(~context?, 404)
+       | _ => ()
+       };
+       PromiseResult.error(err);
+     });
+
+let makeLoader = (call: Monad.t('a), context) =>
+  call(Some(context)) |> handleSomeErrors(Some(context));
+
+let fetch =
+    (
+      ~body: option(Js.Json.t)=?,
+      ~params: array((string, string))=[||],
+      ~method: Fetch.requestMethod=Fetch.Get,
+      ~decoder: Js.Json.t => 'a,
+      path: string,
+    )
+    : Monad.t('a) =>
+  context => {
+    let token = Js.Dict.get(Next.readCookie(~context?, ()), "token");
+
+    switch (token, appKey) {
+    | (_, None) => PromiseResult.error(AppKeyIsNotSet)
+    | (None, _) => PromiseResult.error(Unauthenticated)
+    | (Some(token), Some(appKey)) =>
+      let params' =
+        Js.Array.(
+          params
+          |> concat([|("key", appKey), ("token", token)|])
+          |> map(((key, value)) => key ++ "=" ++ value)
+          |> joinWith("&")
+        );
+
+      let url = "https://api.trello.com/1/" ++ path ++ "?" ++ params';
+
+      let requestInit =
+        switch (body) {
+        | Some(body) =>
+          Fetch.RequestInit.make(
+            ~method_=method,
+            ~body=Fetch.BodyInit.make(body |> Js.Json.stringify),
+            ~headers=
+              Fetch.HeadersInit.make({"Content-Type": "application/json"}),
+            (),
+          )
+        | None => Fetch.RequestInit.make(~method_=method, ())
+        };
+
+      let result =
+        PromiseResult.(
+          Fetch.fetchWithInit(url, requestInit)
+          |> wrap(_ => NetworkProblem)
+          |> flatMap(resp =>
+               switch (resp |. Fetch.Response.status) {
+               | 200 =>
+                 resp |. Fetch.Response.text |> wrap(_ => NetworkProblem)
+               | 401 => error(Unauthenticated)
+               | 404 => error(NotFound)
+               | s => error(BadStatus(s))
+               }
+             )
+          |> tryMap(
+               text => text |> Json.parseOrRaise |> decoder,
+               (e, text) =>
+                 switch (e) {
+                 | Json.Decode.DecodeError(str) => BadResponseBody(str)
+                 | Json.ParseError(str) => BadResponseBody(str)
+                 | _ => BadResponseBody(text)
+                 },
+             )
+        );
+
+      result;
+    };
+  };
 
 module Board = {
   module Prefs = {
@@ -181,8 +216,7 @@ module Card = {
     let encode = value =>
       Json.Encode.(
         object_([("value", object_([("text", string(value))]))])
-      )
-      |> Json.stringify;
+      );
   };
 
   type t = {
@@ -218,18 +252,26 @@ module Card = {
     |> Js.Option.map((. x) => x.CustomFieldItem.value);
 
   let getTimeRecord = (~fieldId: string, card: t) =>
-    switch (card |> getCustomField(~fieldId)) {
-    | Some(x) => TimeRecord.parse(x)
-    | None => TimeRecord.empty()
-    };
+    card
+    |> getCustomField(~fieldId)
+    |> Js.Option.map((. x) => TimeRecord.parse(x));
 };
 
 module List = {
-  type t = {name: string};
+  type t = {
+    name: string,
+    id: string,
+  };
 
   let requestParams = [|("fields", "name")|];
 
-  let decoder = Json.Decode.(x => {name: x |> field("name") @@ string});
+  let decoder =
+    Json.Decode.(
+      x => {
+        name: x |> field("name") @@ string,
+        id: x |> field("id") @@ string,
+      }
+    );
 };
 
 let fetchMyBoards = () =>
@@ -271,8 +313,25 @@ let fetchCard = (cardId: string) =>
 let setCustomField = (~cardId: string, ~fieldId: string, ~newValue: string) =>
   fetch(
     ~decoder=_ => (),
-    ~params=[||],
     ~method=Fetch.Put,
     ~body=Card.CustomFieldItem.encode(newValue),
     "cards/" ++ cardId ++ "/customField/" ++ fieldId ++ "/item",
   );
+
+let getQueryParam = key =>
+  Monad.(
+    withContext(context =>
+      Js.Dict.get(
+        context |> Js.Option.getExn |. Next.LoadingContext.query,
+        key,
+      )
+    )
+    |> flatMap(
+         fun
+         | Some(value) => pure(value)
+         | None => error(NotFound),
+       )
+  );
+
+let getCookies = () =>
+  Monad.withContext(context => Next.readCookie(~context?, ()));

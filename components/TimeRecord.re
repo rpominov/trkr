@@ -41,7 +41,7 @@ let getTodayTime = record =>
 let aggregateTime = record =>
   Js.Array.reduce((+), 0, Js.Dict.values(record));
 
-let combineRecords = (records: array(t)) : t => {
+let combineAll = (records: array(t)) : t => {
   let result = empty();
 
   let insert = ((key, value)) =>
@@ -57,6 +57,12 @@ let combineRecords = (records: array(t)) : t => {
 
   result;
 };
+
+let combine = (extra: t, current: option(t)) : t =>
+  switch (current) {
+  | None => extra
+  | Some(current') => combineAll([|extra, current'|])
+  };
 
 let increment = (record, by) => {
   let key = getCurrentDate();
@@ -103,19 +109,15 @@ let parse = str => {
   result;
 };
 
-type formattedTimeItem =
-  | Text(string)
-  | Time(string);
-
 let formatTodayRest = record => {
   let today = record |> getTodayTime |> formatTime;
   let all = record |> aggregateTime |> formatTime;
 
-  let a = [|Time(all), Text(all == "1" ? " hour" : " hours")|];
+  let a = [|`Time(all), `Text(all == "1" ? " hour" : " hours")|];
   let b =
-    today == "0" ? [||] : [|Text(" ("), Time(today), Text(" today)")|];
+    today == "0" ? [||] : [|`Text(" ("), `Time(today), `Text(" today)")|];
 
-  Js.Array.concat(a, b);
+  Js.Array.concat(b, a);
 };
 
 let formatToday = record => record |> getTodayTime |> formatTime;

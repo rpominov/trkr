@@ -88,6 +88,18 @@ let redirect = (~context: option(LoadingContext.t)=?, target: string) =>
   | None => Router.replace(Router.router, target)
   };
 
+let setResponseStatusCode =
+    (~context: option(LoadingContext.t)=?, status: int) =>
+  switch (
+    switch (context) {
+    | Some(ctx) => ctx |. LoadingContext.res |. Js.Nullable.toOption
+    | None => None
+    }
+  ) {
+  | Some(res) => LoadingContext.Res.statusCodeSet(res, status)
+  | None => ()
+  };
+
 let getBaseUrl = (~context: option(LoadingContext.t)=?, ()) =>
   switch (
     switch (context) {

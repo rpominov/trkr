@@ -1,28 +1,15 @@
 let css: {. "boardItem": string} = [%raw {|require('./index.css')|}];
 
 let renderBoard = (board: Trello.Board.t) => {
-  module B = Trello.Board;
-  module P = Trello.Board.Prefs;
-
-  let {
-    B.prefs: {
-      P.backgroundBrightness,
-      P.backgroundImage,
-      P.backgroundTopColor,
-    },
-    B.id,
-    B.name,
-  } = board;
-
-  let color = backgroundBrightness === "dark" ? "white" : "black";
+  let color = board.prefs.backgroundBrightness === "dark" ? "white" : "black";
 
   let backgroundImage =
-    switch (backgroundImage) {
+    switch (board.prefs.backgroundImage) {
     | Some(url) => "url(" ++ url ++ ")"
     | None => ""
     };
 
-  let backgroundColor = backgroundTopColor;
+  let backgroundColor = board.prefs.backgroundTopColor;
 
   let style =
     ReactDOMRe.Style.make(~color, ~backgroundImage, ~backgroundColor, ());
@@ -30,28 +17,32 @@ let renderBoard = (board: Trello.Board.t) => {
   let href = {
     "pathname": "/board",
     "query": {
-      "id": id,
+      "id": board.id,
     },
   };
 
-  <li key=id className=css##boardItem>
-    <Next.Link href> <a style> (name |> ReasonReact.string) </a> </Next.Link>
+  <li key=board.id className=css##boardItem>
+    <Next.Link href>
+      <a style> (board.name |> ReasonReact.string) </a>
+    </Next.Link>
   </li>;
 };
 
-type data = {boards: array(Trello.Board.t)};
-
-let render = (data: data) =>
-  <ol> (data.boards |> Js.Array.map(renderBoard) |> ReasonReact.array) </ol>;
+type data = array(Trello.Board.t);
 
 let component = ReasonReact.statelessComponent("BoardsPage");
 
-let loader =
-  Trello.fetchMyBoards()
-  |> Trello.Monad.map(boards => {boards: boards})
-  |> Trello.Monad.makeLoader;
+let loader = Trello.fetchMyBoards() |> Trello.makeLoader;
 
 let default =
   Next.Page.create(~component, ~loader, props =>
-    {...component, render: _self => ErrorPage.renderError(props, render)}
+    {
+      ...component,
+      render: _self =>
+        ErrorPage.renderError(props, (boards: data) =>
+          <ol>
+            (boards |> Js.Array.map(renderBoard) |> ReasonReact.array)
+          </ol>
+        ),
+    }
   );

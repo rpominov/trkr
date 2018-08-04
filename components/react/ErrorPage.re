@@ -15,6 +15,7 @@ let make = (~error: Trello.failure, _children) => {
           "Bad API response (status " ++ string_of_int(s) ++ ")."
         | BadResponseBody(str) => "Bad API response.\n\n" ++ str
         | CustomFailure(str) => str
+        | NotFound => "404 Not Found"
         }
       );
 

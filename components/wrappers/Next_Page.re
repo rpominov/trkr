@@ -1,6 +1,9 @@
 module Props = {
   [@bs.deriving abstract]
-  type t('a) = {data: 'a};
+  type t('a) = {
+    data: 'a,
+    router: Next_Router.t,
+  };
 };
 
 module InnerProps = {
@@ -9,7 +12,10 @@ module InnerProps = {
 };
 
 let decodeProps = (props: Props.t(SafePass.t)) : Props.t('a) =>
-  Props.t(~data=SafePass.decode(props |. Props.data));
+  Props.t(
+    ~data=SafePass.decode(props |. Props.data),
+    ~router=props |. Props.router,
+  );
 
 let create =
     (

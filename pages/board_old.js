@@ -74,7 +74,7 @@ export default class extends React.Component {
 
     const result = await track(currentCard, INCREMENT_BY, trkrFieldId)
 
-    const newRecord = this.setState(s => ({
+    this.setState(s => ({
       records: {
         ...s.records,
         [currentCard]: TimeRecord.combineRecords([

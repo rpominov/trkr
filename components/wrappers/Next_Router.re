@@ -1,4 +1,5 @@
-type t;
+[@bs.deriving abstract]
+type t = pri {asPath: string};
 
 [@bs.module "next/router"] external router : t = "default";
 

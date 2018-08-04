@@ -10,23 +10,15 @@ let distort = text => {
   );
 };
 
-type state = {intervalId: ref(option(Js.Global.intervalId))};
-
 let component = ReasonReact.reducerComponent("Distorted");
 
 let make = (~text, ~period=100, _children) => {
   ...component,
-  initialState: () => {intervalId: ref(None)},
   reducer: (_action, state) => ReasonReact.Update(state),
-  didMount: self => {
-    let id = Js.Global.setInterval(() => self.send(), period);
-    self.state.intervalId := Some(id);
+  didMount: ({send, onUnmount}) => {
+    let id = Js.Global.setInterval(send, period);
+    onUnmount(() => Js.Global.clearInterval(id));
   },
-  willUnmount: self =>
-    switch (self.state.intervalId^) {
-    | None => ()
-    | Some(id) => Js.Global.clearInterval(id)
-    },
   render: _self => ReasonReact.string(distort(text)),
 };
 

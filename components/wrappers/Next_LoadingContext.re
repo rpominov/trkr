@@ -14,7 +14,7 @@ module Req = {
     };
 
   let isSecure = req =>
-    switch (req |. connection |. Connection.secure |> Js.Nullable.toOption) {
+    switch (req |. connection |. Connection.secure |. Js.Nullable.toOption) {
     | Some(_) => true
     | None => false
     };
@@ -26,6 +26,7 @@ module Res = {
     pri {
       finished: bool,
       headersSent: bool,
+      mutable statusCode: int,
     };
 
   [@bs.send] external end_ : t => unit = "end";

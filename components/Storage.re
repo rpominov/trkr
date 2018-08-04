@@ -69,8 +69,7 @@ let getRecords = (cards: array(Trello.Card.t), ~fieldId: string) : t => {
            Trello.Card.getCustomField(~fieldId, card),
            Js.Dict.get(localData, id),
          ) {
-         | (Some(a), Some(b)) => combineRecords([|parse(a), b|])
-         | (Some(a), None) => parse(a)
+         | (Some(a), b) => combine(parse(a), b)
          | (None, Some(b)) => b
          | (None, None) => empty()
          }
@@ -84,7 +83,7 @@ let getRecords = (cards: array(Trello.Card.t), ~fieldId: string) : t => {
 let totalUntracked = () =>
   readLocalStorage()
   |> Js.Dict.values
-  |> TimeRecord.combineRecords
+  |> TimeRecord.combineAll
   |> TimeRecord.aggregateTime;
 
 let fetchTrkrFieldId = (~boardId: string) : Trello.Monad.t(string) =>
@@ -123,10 +122,8 @@ let track' =
                    ~fieldId,
                    ~newValue=
                      TimeRecord.stringify(
-                       TimeRecord.combineRecords([|
-                         Trello.Card.getTimeRecord(~fieldId, card),
-                         append,
-                       |]),
+                       Trello.Card.getTimeRecord(~fieldId, card)
+                       |> TimeRecord.combine(append),
                      ),
                  )
                )
@@ -138,12 +135,11 @@ let track = (~fieldId: option(string)=?, ~cardId: string, timeAmmount: int) => {
   track'(~cardId, ~fieldId?, append)
   |> PromiseResult.recover(_ => {
        let localData = readLocalStorage();
-       let newCardData =
-         switch (Js.Dict.get(localData, cardId)) {
-         | Some(data) => TimeRecord.combineRecords([|data, append|])
-         | None => append
-         };
-       Js.Dict.set(localData, cardId, newCardData);
+       Js.Dict.set(
+         localData,
+         cardId,
+         Js.Dict.get(localData, cardId) |> TimeRecord.combine(append),
+       );
        writeLocalStorage(localData);
      })
   |> PromiseResult.map(_ => append);

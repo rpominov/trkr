@@ -14,3 +14,5 @@ let reExec = (re, str) =>
   | Some(x) => x |> Js.Re.captures |> Js.Array.map(Js.Nullable.toOption)
   | None => [||]
   };
+
+let debug: unit => unit = [%raw {|() => {debugger}|}];

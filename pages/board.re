@@ -239,9 +239,10 @@ module InteractiveBoard = {
       let onChange =
         self.handle((_, self) => self.send(SetCurrentCard(None)));
 
-      let checked = self.state.currentCard |> Js.Option.isNone;
+      let isResting = self.state.currentCard |> Js.Option.isNone;
 
       <div className=css##wrap>
+        <Favicon animated=(! isResting) />
         <Next.Head> <title> title </title> </Next.Head>
         (renderHeader(board))
         <p className=css##time> totalTime </p>
@@ -251,7 +252,7 @@ module InteractiveBoard = {
               _type="radio"
               name="current-card"
               id="current-card-radio__rest"
-              checked
+              checked=isResting
               onChange
             />
             <div>

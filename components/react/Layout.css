@@ -1,0 +1,38 @@
+body,
+html {
+  font-family: monospace;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: normal;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: none;
+  text-decoration: none;
+}
+
+ul,
+li {
+  display: block;
+}
+
+.layoutWrap {
+  margin: 20px;
+}
+
+.title {
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.header {
+  margin-bottom: 20px;
+}

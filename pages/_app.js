@@ -1,5 +1,5 @@
 import App, {Container} from "next/app"
-import Layout from "../Layout"
+import Layout from "../components/react/Layout.bs"
 import * as React from "react"
 
 export default class MyApp extends App {

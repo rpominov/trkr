@@ -57,3 +57,8 @@ let iterate = (f, items) => {
     };
   step(0, [||]);
 };
+
+let consume = (f: 'a => unit, promise) => promise |> map(f) |. ignore;
+
+let consumeResult = (f: 'a => unit, promise) =>
+  P.then_(x => f(x) |> P.resolve, promise) |. ignore;

@@ -333,5 +333,6 @@ let getQueryParam = key =>
        )
   );
 
-let getCookies = () =>
-  Monad.withContext(context => Next.readCookie(~context?, ()));
+let getCookie = (key: string) =>
+  Monad.withContext(context => Next.readCookie(~context?, ()))
+  |> Monad.map(cookies => Js.Dict.get(cookies, key));

@@ -24,7 +24,7 @@ type action =
 
 let component = ReasonReact.reducerComponent("Distorted");
 
-let make = (~animated: bool, _children) => {
+let make = (~animated=false, _children) => {
   ...component,
   initialState: () => 0,
   reducer: (_action: action, state: currentFrame) =>

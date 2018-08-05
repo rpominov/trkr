@@ -15,9 +15,9 @@ let component = ReasonReact.reducerComponent("Distorted");
 let make = (~text, ~period=100, _children) => {
   ...component,
   reducer: (_action: unit, state: unit) => ReasonReact.Update(state),
-  didMount: ({send, onUnmount}) => {
-    let id = Js.Global.setInterval(send, period);
-    onUnmount(() => Js.Global.clearInterval(id));
+  didMount: self => {
+    let id = Js.Global.setInterval(self.send, period);
+    self.onUnmount(() => Js.Global.clearInterval(id));
   },
   render: _self => ReasonReact.string(distort(text)),
 };

@@ -109,15 +109,20 @@ let parse = str => {
   result;
 };
 
-let formatTodayRest = record => {
+let formatTodayRest = (~blink=false, record) => {
   let today = record |> getTodayTime |> formatTime;
   let all = record |> aggregateTime |> formatTime;
 
-  let a = [|`Time(all), `Text(all == "1" ? " hour" : " hours")|];
-  let b =
-    today == "0" ? [||] : [|`Text(" ("), `Time(today), `Text(" today)")|];
+  let text = ReasonReact.string;
+  let time =
+    blink ?
+      x => <Blink> (ReasonReact.string(x)) </Blink> : ReasonReact.string;
 
-  Js.Array.concat(b, a);
+  let a = [|time(all), text(all == "1" ? " hour" : " hours")|];
+  let b =
+    today == "0" ? [||] : [|text(" ("), time(today), text(" today)")|];
+
+  Js.Array.concat(b, a) |> ReasonReact.array;
 };
 
 let formatToday = record => record |> getTodayTime |> formatTime;

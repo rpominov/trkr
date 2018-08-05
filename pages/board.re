@@ -11,55 +11,91 @@ let css: {
 let incrementBy = 10;
 let collapsedListsCookieName = "coli";
 
-let renderHeader = (board: Trello.Board.t) => {
-  let (color, textBackground) =
-    board.prefs.backgroundBrightness === "dark" ?
-      ("white", "rgba(0,0,0,0.5)") : ("black", "rgba(255,255,255,0.5)");
+module CollapsedLists = {
+  type t =
+    | CollapsedLists(array(string));
 
-  let backgroundImage =
-    switch (board.prefs.backgroundImage) {
-    | Some(url) => "url(" ++ url ++ ")"
-    | None => ""
-    };
+  let parse = maybeStr : t =>
+    (
+      switch (maybeStr) {
+      | Some(str) => Js.String.split("-", str)
+      | None => [||]
+      }
+    )
+    |. CollapsedLists;
 
-  let style =
-    ReactDOMRe.Style.make(
-      ~backgroundImage,
-      ~backgroundColor=board.prefs.backgroundTopColor,
-      (),
-    );
+  let stringify = (CollapsedLists(lists)) => Js.Array.joinWith("-", lists);
 
-  let style' =
-    ReactDOMRe.Style.make(~color, ~backgroundColor=textBackground, ());
+  let isCollapsed = (CollapsedLists(lists), id) =>
+    lists |> Js.Array.includes(id);
 
-  <h2>
-    <div style />
-    <span style=style'> (board.name |> ReasonReact.string) </span>
-  </h2>;
+  let toggle = (CollapsedLists(lists) as lists', id) =>
+    isCollapsed(lists', id) ?
+      CollapsedLists(Js.Array.filter(x => x !== id, lists)) :
+      CollapsedLists(Js.Array.concat(lists, [|id|]));
 };
 
-let renderUninteractive = board =>
-  <div className=css##wrap>
-    (renderHeader(board))
-    (
-      "Create the \"trkr\" custom field in the board before you can use it with TRKR."
-      |> ReasonReact.string
-    )
-  </div>;
-
-module InteractiveBoard = {
+module Board = {
   type state = {
     currentCard: option(Trello.Card.t),
     records: Storage.t,
-    collapsedLists: array(string),
+    collapsedLists: CollapsedLists.t,
   };
 
   type action =
+    | IncrementCurrent
     | SetCurrentCard(option(Trello.Card.t))
-    | UpdateRecord(string, TimeRecord.t)
-    | SetCollapsed(string, bool);
+    | IncrementDone(string, TimeRecord.t)
+    | ToggleCollapsed(string);
 
-  let component = ReasonReact.reducerComponent("InteractiveBoard");
+  let renderHeader = (board: Trello.Board.t) => {
+    let (color, textBackground) =
+      board.prefs.backgroundBrightness === "dark" ?
+        ("white", "rgba(0,0,0,0.5)") : ("black", "rgba(255,255,255,0.5)");
+
+    let backgroundImage =
+      switch (board.prefs.backgroundImage) {
+      | Some(url) => "url(" ++ url ++ ")"
+      | None => ""
+      };
+
+    let style =
+      ReactDOMRe.Style.make(
+        ~backgroundImage,
+        ~backgroundColor=board.prefs.backgroundTopColor,
+        (),
+      );
+
+    let style' =
+      ReactDOMRe.Style.make(~color, ~backgroundColor=textBackground, ());
+
+    <h2>
+      <div style />
+      <span style=style'> (board.name |> ReasonReact.string) </span>
+    </h2>;
+  };
+
+  let renderCard = (~isCurrent, ~record, ~onSelect, card: Trello.Card.t) => {
+    let elementId = "current-card-radio__" ++ card.id;
+
+    let time = record |> TimeRecord.formatTodayRest(~blink=isCurrent);
+
+    <li key=card.id>
+      <input
+        _type="radio"
+        name="current-card"
+        checked=isCurrent
+        onChange=onSelect
+        id=elementId
+      />
+      <div>
+        <label htmlFor=elementId> (card.name |> ReasonReact.string) </label>
+        <p className=css##time> time </p>
+      </div>
+    </li>;
+  };
+
+  let component = ReasonReact.reducerComponent("Board");
 
   let make =
       (
@@ -67,68 +103,64 @@ module InteractiveBoard = {
         ~board: Trello.Board.t,
         ~lists: array(Trello.List.t),
         ~cards: array(Trello.Card.t),
-        ~initialCollapsedLists: array(string),
+        ~collapsedLists: CollapsedLists.t,
         _children,
       ) => {
     ...component,
     initialState: () => {
       currentCard: None,
       records: Storage.getRecords(cards, ~fieldId),
-      collapsedLists: initialCollapsedLists,
-    },
-    didMount: self => {
-      let id =
-        Js.Global.setInterval(
-          self.handle((_, self) =>
-            switch (self.state.currentCard) {
-            | Some(card) =>
-              ignore(
-                Storage.track(~fieldId, ~cardId=card.id, incrementBy)
-                |> PromiseResult.map(
-                     self.handle((append, self) =>
-                       self.send(
-                         UpdateRecord(
-                           card.id,
-                           Js.Dict.get(self.state.records, card.id)
-                           |> TimeRecord.combine(append),
-                         ),
-                       )
-                     ),
-                   ),
-              )
-            | None => ()
-            }
-          ),
-          incrementBy * 1000,
-        );
-      self.onUnmount(() => Js.Global.clearInterval(id));
+      collapsedLists,
     },
     reducer: (action: action, state: state) =>
       switch (action) {
-      | UpdateRecord(cardId, record) =>
+      | IncrementCurrent =>
+        SideEffects(
+          (
+            self =>
+              switch (self.state.currentCard) {
+              | Some(card) =>
+                Storage.track(~fieldId, ~cardId=card.id, incrementBy)
+                |> PromiseResult.consume(append =>
+                     self.send(IncrementDone(card.id, append))
+                   )
+              | None => ()
+              }
+          ),
+        )
+      | IncrementDone(cardId, append) =>
         Update({
           ...state,
-          records: Util.dictAssoc(state.records, cardId, record),
+          records:
+            Util.dictAssoc(
+              state.records,
+              cardId,
+              Js.Dict.get(state.records, cardId)
+              |> TimeRecord.combine(append),
+            ),
         })
       | SetCurrentCard(currentCard) => Update({...state, currentCard})
-      | SetCollapsed(listId, isCollapsed) =>
+      | ToggleCollapsed(listId) =>
         ReasonReact.UpdateWithSideEffects(
           {
             ...state,
             collapsedLists:
-              isCollapsed ?
-                state.collapsedLists |> Js.Array.concat([|listId|]) :
-                state.collapsedLists |> Js.Array.filter(x => x !== listId),
+              CollapsedLists.toggle(state.collapsedLists, listId),
           },
           (
             self =>
               Next.writeCookie(
                 collapsedListsCookieName,
-                self.state.collapsedLists |> Js.Array.joinWith("-"),
+                self.state.collapsedLists |> CollapsedLists.stringify,
               )
           ),
         )
       },
+    didMount: self => {
+      let cb = () => self.send(IncrementCurrent);
+      let id = Js.Global.setInterval(cb, incrementBy * 1000);
+      self.onUnmount(() => Js.Global.clearInterval(id));
+    },
     render: self => {
       let title =
         (
@@ -149,97 +181,10 @@ module InteractiveBoard = {
         self.state.records
         |> Js.Dict.values
         |> TimeRecord.combineAll
-        |> TimeRecord.formatTodayRest
-        |> Js.Array.map(
-             fun
-             | `Text(s) => ReasonReact.string(s)
-             | `Time(s) => ReasonReact.string(s),
-           )
-        |> ReasonReact.array;
-
-      let lists' =
-        lists
-        |> Js.Array.map((list: Trello.List.t) => {
-             let isCollapsed =
-               self.state.collapsedLists |> Js.Array.includes(list.id);
-
-             let cards' =
-               isCollapsed ?
-                 ReasonReact.null :
-                 cards
-                 |> Js.Array.filter(card =>
-                      card.Trello.Card.idList === list.id
-                    )
-                 |> Js.Array.map((card: Trello.Card.t) => {
-                      let elementId = "current-card-radio__" ++ card.id;
-
-                      let isCurrent =
-                        switch (self.state.currentCard) {
-                        | Some(x) => x === card
-                        | None => false
-                        };
-
-                      let time =
-                        Js.Dict.unsafeGet(self.state.records, card.id)
-                        |> TimeRecord.formatTodayRest
-                        |> Js.Array.map(
-                             fun
-                             | `Text(s) => ReasonReact.string(s)
-                             | `Time(s) =>
-                               isCurrent ?
-                                 <Blink> (ReasonReact.string(s)) </Blink> :
-                                 ReasonReact.string(s),
-                           )
-                        |> ReasonReact.array;
-
-                      let onChange =
-                        self.handle((_, self) =>
-                          self.send(SetCurrentCard(Some(card)))
-                        );
-
-                      <li key=card.id>
-                        <input
-                          _type="radio"
-                          name="current-card"
-                          checked=isCurrent
-                          onChange
-                          id=elementId
-                        />
-                        <div>
-                          <label htmlFor=elementId>
-                            (card.name |> ReasonReact.string)
-                          </label>
-                          <p className=css##time> time </p>
-                        </div>
-                      </li>;
-                    })
-                 |> ReasonReact.array;
-
-             let onClick =
-               self.handle((_, self) =>
-                 self.send(SetCollapsed(list.id, ! isCollapsed))
-               );
-
-             <div key=list.id className=css##listWrap>
-               <h3>
-                 (list.name |> ReasonReact.string)
-                 <button className=css##toggleCollapse onClick>
-                   (
-                     ReasonReact.string(
-                       isCollapsed ? "[expand]" : "[collapse]",
-                     )
-                   )
-                 </button>
-               </h3>
-               cards'
-             </div>;
-           })
-        |> ReasonReact.array;
-
-      let onChange =
-        self.handle((_, self) => self.send(SetCurrentCard(None)));
+        |> TimeRecord.formatTodayRest;
 
       let isResting = self.state.currentCard |> Js.Option.isNone;
+      let onStartResting = _ => self.send(SetCurrentCard(None));
 
       <div className=css##wrap>
         <Favicon animated=(! isResting) />
@@ -253,7 +198,7 @@ module InteractiveBoard = {
               name="current-card"
               id="current-card-radio__rest"
               checked=isResting
-              onChange
+              onChange=onStartResting
             />
             <div>
               <label htmlFor="current-card-radio__rest">
@@ -262,10 +207,68 @@ module InteractiveBoard = {
             </div>
           </li>
         </ul>
-        lists'
+        (
+          lists
+          |> Js.Array.map((list: Trello.List.t) => {
+               let isCollapsed =
+                 CollapsedLists.isCollapsed(
+                   self.state.collapsedLists,
+                   list.id,
+                 );
+
+               let toggleCollapse = _ => self.send(ToggleCollapsed(list.id));
+
+               <div key=list.id className=css##listWrap>
+                 <h3>
+                   (list.name |> ReasonReact.string)
+                   <button
+                     className=css##toggleCollapse onClick=toggleCollapse>
+                     (
+                       ReasonReact.string(
+                         isCollapsed ? "[expand]" : "[collapse]",
+                       )
+                     )
+                   </button>
+                 </h3>
+                 (
+                   isCollapsed ?
+                     ReasonReact.null :
+                     cards
+                     |> Js.Array.filter(card =>
+                          card.Trello.Card.idList === list.id
+                        )
+                     |> Js.Array.map(card =>
+                          renderCard(
+                            ~isCurrent=
+                              switch (self.state.currentCard) {
+                              | Some(x) => x === card
+                              | None => false
+                              },
+                            ~record=
+                              Js.Dict.unsafeGet(self.state.records, card.id),
+                            ~onSelect=
+                              _ => self.send(SetCurrentCard(Some(card))),
+                            card,
+                          )
+                        )
+                     |> ReasonReact.array
+                 )
+               </div>;
+             })
+          |> ReasonReact.array
+        )
       </div>;
     },
   };
+
+  let renderUninteractive = board =>
+    <div className=css##wrap>
+      (renderHeader(board))
+      (
+        "Create the \"trkr\" custom field in the board before you can use it with TRKR."
+        |> ReasonReact.string
+      )
+    </div>;
 };
 
 type data =
@@ -274,7 +277,7 @@ type data =
       Trello.Board.t,
       Js.Array.t(Trello.List.t),
       array(Trello.Card.t),
-      array(Js.String.t),
+      CollapsedLists.t,
     )
   | WithoutTrkrField(Trello.Board.t);
 
@@ -288,32 +291,21 @@ let loader =
               | None => pure(WithoutTrkrField(board))
               | Some(fieldId) =>
                 Trello.fetchLists(boardId)
+                |> map(Js.Array.reverseInPlace)
                 |> flatMap(lists =>
                      Trello.fetchCards(boardId)
                      |> flatMap(cards =>
-                          Trello.getCookies()
-                          |> map(cookies => {
-                               ignore(Js.Array.reverseInPlace(lists));
-
-                               let initialCollapsedLists =
-                                 switch (
-                                   Js.Dict.get(
-                                     cookies,
-                                     collapsedListsCookieName,
-                                   )
-                                 ) {
-                                 | Some(lists) => Js.String.split("-", lists)
-                                 | None => [||]
-                                 };
-
+                          Trello.getCookie(collapsedListsCookieName)
+                          |> map(CollapsedLists.parse)
+                          |> map(collapsedLists =>
                                WithTrkrField(
                                  fieldId,
                                  board,
                                  lists,
                                  cards,
-                                 initialCollapsedLists,
-                               );
-                             })
+                                 collapsedLists,
+                               )
+                             )
                         )
                    )
               }
@@ -322,7 +314,7 @@ let loader =
     |> Trello.makeLoader
   );
 
-let component = ReasonReact.statelessComponent("BoardsPage");
+let component = ReasonReact.statelessComponent("BoardPage");
 
 let default =
   Next.Page.create(~component, ~loader, props =>
@@ -331,15 +323,9 @@ let default =
       render: _self =>
         ErrorPage.renderError(props, data =>
           switch (data) {
-          | WithoutTrkrField(board) => renderUninteractive(board)
-          | WithTrkrField(fieldId, board, lists, cards, initialCollapsedLists) =>
-            <InteractiveBoard
-              fieldId
-              board
-              lists
-              cards
-              initialCollapsedLists
-            />
+          | WithoutTrkrField(board) => Board.renderUninteractive(board)
+          | WithTrkrField(fieldId, board, lists, cards, collapsedLists) =>
+            <Board fieldId board lists cards collapsedLists />
           }
         ),
     }

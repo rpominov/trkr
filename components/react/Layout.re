@@ -38,7 +38,7 @@ let make = (children: array(ReasonReact.reactElement)) => {
   },
   render: self =>
     <div className=css##layoutWrap>
-      <Favicon animated=false />
+      <Favicon />
       <Next.Head> <title> (ReasonReact.string("TRKR")) </title> </Next.Head>
       <header className=css##header>
         <Next.Link href="/">

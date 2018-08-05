@@ -4,8 +4,6 @@ const path = require('path')
 module.exports = withCSS({
   cssModules: true,
 
-  pageExtensions: ["js", "bs.js"],
-
   publicRuntimeConfig: {
     appKey: process.env.APP_KEY,
   },

@@ -4,7 +4,7 @@ let css: {
   "title": string,
   "header": string,
 } = [%raw
-  {|require('./Layout.css')|}
+  {|require('components/Layout.css')|}
 ];
 
 type isLoading = bool;

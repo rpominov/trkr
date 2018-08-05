@@ -1,4 +1,4 @@
-let css: {. "box": string} = [%raw {|require('./ErrorPage.css')|}];
+let css: {. "box": string} = [%raw {|require('components/ErrorPage.css')|}];
 
 let component = ReasonReact.statelessComponent("ErrorPage");
 

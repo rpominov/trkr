@@ -1,4 +1,4 @@
-let css: {. "main": string} = [%raw {|require('./Blink.css')|}];
+let css: {. "main": string} = [%raw {|require('components/Blink.css')|}];
 
 let component = ReasonReact.statelessComponent("Blink");
 

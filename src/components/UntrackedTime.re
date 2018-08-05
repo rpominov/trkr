@@ -1,4 +1,6 @@
-let css: {. "main": string} = [%raw {|require('./UntrackedTime.css')|}];
+let css: {. "main": string} = [%raw
+  {|require('components/UntrackedTime.css')|}
+];
 
 type state = {
   time: int,

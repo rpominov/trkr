@@ -1,19 +1,19 @@
-let staticIcon: string = [%raw {|require('../../static/favicon/icon-0.png')|}];
+let staticIcon: string = [%raw {|require('static/favicon/icon-0.png')|}];
 
 let frames: array(string) = [%raw
   {|[
-  require("../../static/favicon/icon-1.png"),
-  require("../../static/favicon/icon-2.png"),
-  require("../../static/favicon/icon-3.png"),
-  require("../../static/favicon/icon-4.png"),
-  require("../../static/favicon/icon-5.png"),
-  require("../../static/favicon/icon-6.png"),
-  require("../../static/favicon/icon-7.png"),
-  require("../../static/favicon/icon-8.png"),
-  require("../../static/favicon/icon-9.png"),
-  require("../../static/favicon/icon-10.png"),
-  require("../../static/favicon/icon-11.png"),
-  require("../../static/favicon/icon-12.png"),
+  require("static/favicon/icon-1.png"),
+  require("static/favicon/icon-2.png"),
+  require("static/favicon/icon-3.png"),
+  require("static/favicon/icon-4.png"),
+  require("static/favicon/icon-5.png"),
+  require("static/favicon/icon-6.png"),
+  require("static/favicon/icon-7.png"),
+  require("static/favicon/icon-8.png"),
+  require("static/favicon/icon-9.png"),
+  require("static/favicon/icon-10.png"),
+  require("static/favicon/icon-11.png"),
+  require("static/favicon/icon-12.png"),
 ]|}
 ];
 

@@ -1,4 +1,5 @@
 const withCSS = require("@zeit/next-css")
+const path = require('path')
 
 module.exports = withCSS({
   cssModules: true,
@@ -22,6 +23,12 @@ module.exports = withCSS({
         },
       },
     })
+
+    config.resolve.modules.push(
+      path.resolve(__dirname, './lib/js/src'),
+      path.resolve(__dirname, './src'),
+      path.resolve(__dirname)
+    )
 
     return config
   },

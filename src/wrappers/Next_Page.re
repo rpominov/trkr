@@ -11,7 +11,7 @@ module InnerProps = {
   type t('a) = {data: 'a};
 };
 
-let decodeProps = (props: Props.t(SafePass.t)) : Props.t('a) =>
+let decodeProps = (props: Props.t(SafePass.t('a))) : Props.t('a) =>
   Props.t(
     ~data=SafePass.decode(props |. Props.data),
     ~router=props |. Props.router,
@@ -20,7 +20,14 @@ let decodeProps = (props: Props.t(SafePass.t)) : Props.t('a) =>
 let create =
     (
       ~loader: Next_LoadingContext.t => Js.Promise.t('a),
-      ~component,
+      ~component:
+         ReasonReact.componentSpec(
+           'state,
+           'initialState,
+           'retainedProps,
+           'initialRetainedProps,
+           'action,
+         ),
       converter:
         Props.t('a) => ReasonReact.component('state, 'retainedProps, 'action),
     ) => {

@@ -1,6 +1,6 @@
 /* From https://github.com/ulrikstrid/bs-next */
 
-[@bs.module "next/link"] external link : ReasonReact.reactClass = "default";
+[@bs.module "next/link"] external link: ReasonReact.reactClass = "default";
 let make =
     (
       ~href=?,
@@ -14,15 +14,13 @@ let make =
   ReasonReact.wrapJsForReason(
     ~reactClass=link,
     ~props=
-      Js.Undefined.(
-        {
-          "href": fromOption(href),
-          "as": fromOption(_as),
-          "prefetch": fromOption(prefetch),
-          "replace": fromOption(replace),
-          "shallow": fromOption(shallow),
-          "passHref": fromOption(passHref),
-        }
-      ),
+      Js.Undefined.{
+        "href": fromOption(href),
+        "as": fromOption(_as),
+        "prefetch": fromOption(prefetch),
+        "replace": fromOption(replace),
+        "shallow": fromOption(shallow),
+        "passHref": fromOption(passHref),
+      },
     children,
   );

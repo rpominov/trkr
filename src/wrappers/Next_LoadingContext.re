@@ -14,7 +14,7 @@ module Req = {
     };
 
   let isSecure = req =>
-    switch (req |. connection |. Connection.secure |. Js.Nullable.toOption) {
+    switch (req->connectionGet->Connection.secureGet->Js.Nullable.toOption) {
     | Some(_) => true
     | None => false
     };
@@ -29,12 +29,12 @@ module Res = {
       mutable statusCode: int,
     };
 
-  [@bs.send] external end_ : t => unit = "end";
-  [@bs.send] external hasHeader : (t, string) => bool = "";
-  [@bs.send] external getHeader : (t, string) => Js.Nullable.t(string) = "";
-  [@bs.send] external setHeader : (t, string, string) => unit = "";
-  [@bs.send] external removeHeader : (t, string) => unit = "";
-  [@bs.send] external writeHead : (t, int, Js.Dict.t(string)) => unit = "";
+  [@bs.send] external end_: t => unit = "end";
+  [@bs.send] external hasHeader: (t, string) => bool = "";
+  [@bs.send] external getHeader: (t, string) => Js.Nullable.t(string) = "";
+  [@bs.send] external setHeader: (t, string, string) => unit = "";
+  [@bs.send] external removeHeader: (t, string) => unit = "";
+  [@bs.send] external writeHead: (t, int, Js.Dict.t(string)) => unit = "";
 };
 
 module BrowserRes = {

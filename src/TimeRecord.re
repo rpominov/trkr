@@ -7,9 +7,9 @@ let separator2 = " ";
 let separator3 = ":";
 let separator4 = ".";
 
-let empty = () : t => Js.Dict.empty();
+let empty = (): t => Js.Dict.empty();
 
-let getCurrentDate = () : key => {
+let getCurrentDate = (): key => {
   open Js.Date;
   let d = make();
   [|
@@ -41,7 +41,7 @@ let getTodayTime = record =>
 let aggregateTime = record =>
   Js.Array.reduce((+), 0, Js.Dict.values(record));
 
-let combineAll = (records: array(t)) : t => {
+let combineAll = (records: array(t)): t => {
   let result = empty();
 
   let insert = ((key, value)) =>
@@ -58,7 +58,7 @@ let combineAll = (records: array(t)) : t => {
   result;
 };
 
-let combine = (extra: t, current: option(t)) : t =>
+let combine = (extra: t, current: option(t)): t =>
   switch (current) {
   | None => extra
   | Some(current') => combineAll([|extra, current'|])
@@ -115,8 +115,7 @@ let formatTodayRest = (~blink=false, record) => {
 
   let text = ReasonReact.string;
   let time =
-    blink ?
-      x => <Blink> (ReasonReact.string(x)) </Blink> : ReasonReact.string;
+    blink ? x => ReasonReact.string(x) |> Blink.render : ReasonReact.string;
 
   let a = [|time(all), text(all == "1" ? " hour" : " hours")|];
   let b =

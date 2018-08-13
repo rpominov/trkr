@@ -8,17 +8,17 @@
     "heroku-postbuild": "bsb -make-world && next build"
   },
   "dependencies": {
-    "@glennsl/bs-json": "^2.0.0",
+    "@glennsl/bs-json": "^3.0.0",
+    "@rpominov/bs-preserve-tags": "^0.1.1",
     "@zeit/next-css": "^0.2.0",
-    "babel-plugin-bucklescript": "^0.4.0",
     "bs-fetch": "^0.3.0",
-    "bs-platform": "^3.1.5",
+    "bs-platform": "^4.0.4",
     "cookie": "^0.3.1",
     "isomorphic-unfetch": "^2.0.0",
     "next": "^6.1.1",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
-    "reason-react": "^0.4.2",
+    "reason-react": "^0.5.3",
     "url-loader": "^1.0.1"
   }
 }

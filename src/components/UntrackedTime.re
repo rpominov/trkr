@@ -42,17 +42,17 @@ let make = _children => {
       ReasonReact.null :
       <div className=css##main>
         <p>
-          ("We were unable to send " |. ReasonReact.string)
-          (self.state.time |. TimeRecord.formatTime |. ReasonReact.string)
-          (" hours of tracked time to the server." |. ReasonReact.string)
+          "We were unable to send "->ReasonReact.string
+          self.state.time->TimeRecord.formatTime->ReasonReact.string
+          " hours of tracked time to the server."->ReasonReact.string
         </p>
         <button
-          onClick=(_ => self.send(SendStart)) disabled=self.state.sending>
-          (
+          onClick={_ => self.send(SendStart)} disabled={self.state.sending}>
+          {
             self.state.sending ?
               <Distorted text="Try again now" /> :
               ReasonReact.string("Try again now")
-          )
+          }
         </button>
       </div>,
 };

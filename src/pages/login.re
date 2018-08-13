@@ -8,7 +8,7 @@ let default =
       {
         ...component,
         didMount: _ => {
-          let asPath = props |. Next.Page.Props.router |. Next.Router.asPath;
+          let asPath = props->Next.Page.Props.routerGet->Next.Router.asPathGet;
           switch (asPath |> Js.String.split("#")) {
           | [|_, hash|] =>
             switch (hash |> Js.String.split("=")) {

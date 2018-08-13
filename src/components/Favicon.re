@@ -30,11 +30,11 @@ let make = (~animated=false, _children) => {
   reducer: (_action: action, state: currentFrame) =>
     ReasonReact.Update((state + 1) mod Js.Array.length(frames)),
   didMount: ({send, onUnmount}) => {
-    let id = Js.Global.setInterval(() => Increment |. send, 240);
+    let id = Js.Global.setInterval(() => Increment->send, 240);
     onUnmount(() => Js.Global.clearInterval(id));
   },
   render: self => {
     let image = animated ? frames[self.state] : staticIcon;
-    <Next.Head> <link rel="icon" _type="image/png" href=image /> </Next.Head>;
+    <Next.Head> <link rel="icon" type_="image/png" href=image /> </Next.Head>;
   },
 };

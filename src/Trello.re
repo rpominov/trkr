@@ -1,7 +1,7 @@
 [%raw "require('isomorphic-fetch')"];
 
 let appKey =
-  Js.Dict.get(Next.Config.(getConfig() |. publicRuntimeConfig), "appKey");
+  Js.Dict.get(Next.Config.(getConfig()->publicRuntimeConfigGet), "appKey");
 
 type failure =
   | NotFound
@@ -16,16 +16,16 @@ module Monad = {
   type result('a) = PromiseResult.t('a, failure);
   type t('a) = option(Next.LoadingContext.t) => result('a);
 
-  let pure = (x: 'a) : t('a) => _ => PromiseResult.ok(x);
-  let error = (err: failure) : t('a) => _ => PromiseResult.error(err);
+  let pure = (x: 'a): t('a) => _ => PromiseResult.ok(x);
+  let error = (err: failure): t('a) => _ => PromiseResult.error(err);
 
-  let map = (f: 'a => 'b, call: t('a)) : t('b) =>
+  let map = (f: 'a => 'b, call: t('a)): t('b) =>
     ctx => call(ctx) |> PromiseResult.map(f);
 
-  let flatMap = (f: 'a => t('b), call: t('a)) : t('b) =>
+  let flatMap = (f: 'a => t('b), call: t('a)): t('b) =>
     ctx => call(ctx) |> PromiseResult.flatMap(x => f(x, ctx));
 
-  let withContext = (f: option(Next.LoadingContext.t) => 'a) : t('a) =>
+  let withContext = (f: option(Next.LoadingContext.t) => 'a): t('a) =>
     context => PromiseResult.ok(f(context));
 };
 
@@ -45,9 +45,7 @@ let redirectToAuthentication = context => {
   Next.redirect(~context?, url);
 };
 
-let handleSomeErrors =
-    (context, result: Monad.result('a))
-    : Monad.result('a) =>
+let handleSomeErrors = (context, result: Monad.result('a)): Monad.result('a) =>
   result
   |> PromiseResult.flatMapError(err => {
        switch (err) {
@@ -105,9 +103,8 @@ let fetch =
           Fetch.fetchWithInit(url, requestInit)
           |> wrap(_ => NetworkProblem)
           |> flatMap(resp =>
-               switch (resp |. Fetch.Response.status) {
-               | 200 =>
-                 resp |. Fetch.Response.text |> wrap(_ => NetworkProblem)
+               switch (resp->Fetch.Response.status) {
+               | 200 => resp->Fetch.Response.text |> wrap(_ => NetworkProblem)
                | 401 => error(Unauthenticated)
                | 404 => error(NotFound)
                | s => error(BadStatus(s))
@@ -246,7 +243,7 @@ module Card = {
       }
     );
 
-  let getCustomField = (~fieldId: string, card: t) : option(string) =>
+  let getCustomField = (~fieldId: string, card: t): option(string) =>
     card.customFieldItems
     |> Js.Array.find(x => x.CustomFieldItem.idCustomField === fieldId)
     |> Js.Option.map((. x) => x.CustomFieldItem.value);
@@ -322,7 +319,7 @@ let getQueryParam = key =>
   Monad.(
     withContext(context =>
       Js.Dict.get(
-        context |> Js.Option.getExn |. Next.LoadingContext.query,
+        (context |> Js.Option.getExn)->Next.LoadingContext.queryGet,
         key,
       )
     )

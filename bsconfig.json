@@ -13,6 +13,11 @@
     "module": "commonjs"
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["reason-react", "bs-fetch", "@glennsl/bs-json"],
+  "bs-dependencies": [
+    "reason-react", 
+    "bs-fetch", 
+    "@glennsl/bs-json", 
+    "@rpominov/bs-preserve-tags"
+  ],
   "refmt": 3
 }

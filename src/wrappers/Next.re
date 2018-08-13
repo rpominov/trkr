@@ -11,16 +11,16 @@ module Cookie = {
   type options = {maxAge: Js.Undefined.t(int)};
 
   [@bs.module "cookie"]
-  external serialize : (string, string, options) => string = "";
+  external serialize: (string, string, options) => string = "";
 
-  [@bs.module "cookie"] external parse : string => Js.Dict.t(string) = "";
+  [@bs.module "cookie"] external parse: string => Js.Dict.t(string) = "";
 };
 
 module Document = {
   [@bs.deriving abstract]
   type document = pri {mutable cookie: string};
 
-  [@bs.val] external document : document = "";
+  [@bs.val] external document: document = "";
 };
 
 module Location = {
@@ -31,7 +31,7 @@ module Location = {
       host: string,
     };
 
-  [@bs.val] external location : location = "";
+  [@bs.val] external location: location = "";
 };
 
 let writeCookie =
@@ -46,7 +46,7 @@ let writeCookie =
 
   switch (
     switch (context) {
-    | Some(ctx) => ctx |. LoadingContext.res |. Js.Nullable.toOption
+    | Some(ctx) => ctx->LoadingContext.resGet->Js.Nullable.toOption
     | None => None
     }
   ) {
@@ -56,28 +56,27 @@ let writeCookie =
 };
 
 let readCookie =
-    (~context: option(LoadingContext.t)=?, ())
-    : Js.Dict.t(string) =>
+    (~context: option(LoadingContext.t)=?, ()): Js.Dict.t(string) =>
   Cookie.parse(
     switch (
       switch (context) {
-      | Some(ctx) => ctx |. LoadingContext.req |. Js.Nullable.toOption
+      | Some(ctx) => ctx->LoadingContext.reqGet->Js.Nullable.toOption
       | None => None
       }
     ) {
     | Some(req) =>
-      switch (Js.Dict.get(req |. LoadingContext.Req.headers, "cookie")) {
+      switch (Js.Dict.get(req->LoadingContext.Req.headersGet, "cookie")) {
       | Some(s) => s
       | None => ""
       }
-    | None => Document.(document |. cookie)
+    | None => Document.(document->cookieGet)
     },
   );
 
 let redirect = (~context: option(LoadingContext.t)=?, target: string) =>
   switch (
     switch (context) {
-    | Some(ctx) => ctx |. LoadingContext.res |. Js.Nullable.toOption
+    | Some(ctx) => ctx->LoadingContext.resGet->Js.Nullable.toOption
     | None => None
     }
   ) {
@@ -92,7 +91,7 @@ let setResponseStatusCode =
     (~context: option(LoadingContext.t)=?, status: int) =>
   switch (
     switch (context) {
-    | Some(ctx) => ctx |. LoadingContext.res |. Js.Nullable.toOption
+    | Some(ctx) => ctx->LoadingContext.resGet->Js.Nullable.toOption
     | None => None
     }
   ) {
@@ -103,7 +102,7 @@ let setResponseStatusCode =
 let getBaseUrl = (~context: option(LoadingContext.t)=?, ()) =>
   switch (
     switch (context) {
-    | Some(ctx) => ctx |. LoadingContext.req |. Js.Nullable.toOption
+    | Some(ctx) => ctx->LoadingContext.reqGet->Js.Nullable.toOption
     | None => None
     }
   ) {
@@ -111,7 +110,7 @@ let getBaseUrl = (~context: option(LoadingContext.t)=?, ()) =>
     LoadingContext.Req.(
       (isSecure(req') ? "https" : "http")
       ++ "://"
-      ++ Js.Dict.unsafeGet(req' |. headers, "host")
+      ++ Js.Dict.unsafeGet(req'->headersGet, "host")
     )
-  | None => Location.((location |. protocol) ++ "//" ++ (location |. host))
+  | None => Location.(location->protocolGet ++ "//" ++ location->hostGet)
   };

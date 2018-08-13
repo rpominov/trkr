@@ -3,16 +3,16 @@ module R = Belt.Result;
 
 type t('ok, 'error) = P.t(R.t('ok, 'error));
 
-let ok = (x: 'a) : t('a, 'b) => R.Ok(x) |> P.resolve;
+let ok = (x: 'a): t('a, 'b) => R.Ok(x) |> P.resolve;
 
-let error = (x: 'a) : t('b, 'a) => R.Error(x) |> P.resolve;
+let error = (x: 'a): t('b, 'a) => R.Error(x) |> P.resolve;
 
-let wrap = (f: P.error => 'a, promise: P.t('b)) : t('b, 'a) =>
+let wrap = (f: P.error => 'a, promise: P.t('b)): t('b, 'a) =>
   promise
   |> P.then_(x => R.Ok(x) |> P.resolve)
   |> P.catch(e => R.Error(e |> f) |> P.resolve);
 
-let map = (f: 'a => 'b, promise: t('a, 'c)) : t('b, 'c) =>
+let map = (f: 'a => 'b, promise: t('a, 'c)): t('b, 'c) =>
   promise
   |> P.then_(
        fun
@@ -20,7 +20,7 @@ let map = (f: 'a => 'b, promise: t('a, 'c)) : t('b, 'c) =>
        | R.Error(_) as e => e |> P.resolve,
      );
 
-let flatMap = (f: 'a => t('b, 'c), promise: t('a, 'c)) : t('b, 'c) =>
+let flatMap = (f: 'a => t('b, 'c), promise: t('a, 'c)): t('b, 'c) =>
   promise
   |> P.then_(
        fun
@@ -28,7 +28,7 @@ let flatMap = (f: 'a => t('b, 'c), promise: t('a, 'c)) : t('b, 'c) =>
        | R.Error(_) as e => e |> P.resolve,
      );
 
-let flatMapError = (f: 'b => t('a, 'b), promise: t('a, 'b)) : t('a, 'b) =>
+let flatMapError = (f: 'b => t('a, 'b), promise: t('a, 'b)): t('a, 'b) =>
   promise
   |> P.then_(
        fun
@@ -58,7 +58,7 @@ let iterate = (f, items) => {
   step(0, [||]);
 };
 
-let consume = (f: 'a => unit, promise) => promise |> map(f) |. ignore;
+let consume = (f: 'a => unit, promise) => (promise |> map(f))->ignore;
 
 let consumeResult = (f: 'a => unit, promise) =>
-  P.then_(x => f(x) |> P.resolve, promise) |. ignore;
+  P.then_(x => f(x) |> P.resolve, promise)->ignore;

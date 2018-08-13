@@ -39,21 +39,21 @@ let make = (children: array(ReasonReact.reactElement)) => {
   render: self =>
     <div className=css##layoutWrap>
       <Favicon />
-      <Next.Head> <title> (ReasonReact.string("TRKR")) </title> </Next.Head>
+      <Next.Head> <title> {ReasonReact.string("TRKR")} </title> </Next.Head>
       <header className=css##header>
         <Next.Link href="/">
           <a>
             <h1 className=css##title>
-              (
+              {
                 self.state ?
                   <Distorted text="TRKR" /> : ReasonReact.string("TRKR")
-              )
+              }
             </h1>
           </a>
         </Next.Link>
         <UntrackedTime />
       </header>
-      <main> (ReasonReact.array(children)) </main>
+      <main> {ReasonReact.array(children)} </main>
     </div>,
 };
 

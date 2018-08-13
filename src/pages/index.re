@@ -21,9 +21,9 @@ let renderBoard = (board: Trello.Board.t) => {
     },
   };
 
-  <li key=board.id className=css##boardItem>
+  <li key={board.id} className=css##boardItem>
     <Next.Link href>
-      <a style> (board.name |> ReasonReact.string) </a>
+      <a style> {board.name |> ReasonReact.string} </a>
     </Next.Link>
   </li>;
 };
@@ -41,7 +41,7 @@ let default =
       render: _self =>
         ErrorPage.renderError(props, (boards: data) =>
           <ol>
-            (boards |> Js.Array.map(renderBoard) |> ReasonReact.array)
+            {boards |> Js.Array.map(renderBoard) |> ReasonReact.array}
           </ol>
         ),
     }

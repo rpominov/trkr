@@ -20,14 +20,14 @@ let make = (~error: Trello.failure, _children) => {
       );
 
     <div className=css##box>
-      <h2> (ReasonReact.string("Error")) </h2>
-      <pre> (ReasonReact.string(content)) </pre>
+      <h2> {ReasonReact.string("Error")} </h2>
+      <pre> {ReasonReact.string(content)} </pre>
     </div>;
   },
 };
 
 let renderError = (props, regularRender) => {
-  let data = props |. Next.Page.Props.data;
+  let data = props->Next.Page.Props.dataGet;
 
   switch (data) {
   | Belt.Result.Ok(data') => regularRender(data')

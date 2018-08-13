@@ -2,10 +2,10 @@ module Process = {
   [@bs.deriving abstract]
   type t = pri {browser: Js.Nullable.t(bool)};
 
-  [@bs.val] external process : t = "";
+  [@bs.val] external process: t = "";
 
   let inBrowser =
-    switch (process |. browser |> Js.Nullable.toOption) {
+    switch (process->browserGet |> Js.Nullable.toOption) {
     | Some(x) => x
     | None => false
     };
@@ -14,18 +14,18 @@ module Process = {
 module LocalStorage = {
   type t;
 
-  [@bs.send] external getItem : (t, string) => Js.Nullable.t(string) = "";
-  [@bs.send] external setItem : (t, string, string) => unit = "";
+  [@bs.send] external getItem: (t, string) => Js.Nullable.t(string) = "";
+  [@bs.send] external setItem: (t, string, string) => unit = "";
 
-  [@bs.val] external localStorage : t = "";
+  [@bs.val] external localStorage: t = "";
 };
 
 type t = Js.Dict.t(TimeRecord.t);
 
 let localStorageKey = "untrackedTime";
 
-let readLocalStorage = () : t =>
-  if (! Process.inBrowser) {
+let readLocalStorage = (): t =>
+  if (!Process.inBrowser) {
     Js.Dict.empty();
   } else {
     switch (
@@ -40,8 +40,8 @@ let readLocalStorage = () : t =>
     };
   };
 
-let writeLocalStorage = (data: t) : unit =>
-  if (! Process.inBrowser) {
+let writeLocalStorage = (data: t): unit =>
+  if (!Process.inBrowser) {
     ();
   } else {
     switch (Js.Json.stringifyAny(data)) {
@@ -57,7 +57,7 @@ let removeLocalRecord = (~cardId: string) =>
   |> Js.Dict.fromArray
   |> writeLocalStorage;
 
-let getRecords = (cards: array(Trello.Card.t), ~fieldId: string) : t => {
+let getRecords = (cards: array(Trello.Card.t), ~fieldId: string): t => {
   let localData = readLocalStorage();
   let result = Js.Dict.empty();
 
@@ -86,7 +86,7 @@ let totalUntracked = () =>
   |> TimeRecord.combineAll
   |> TimeRecord.aggregateTime;
 
-let fetchTrkrFieldId = (~boardId: string) : Trello.Monad.t(string) =>
+let fetchTrkrFieldId = (~boardId: string): Trello.Monad.t(string) =>
   Trello.Monad.(
     Trello.fetchBoard(boardId)
     |> flatMap(board =>

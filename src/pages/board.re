@@ -15,14 +15,14 @@ module CollapsedLists = {
   type t =
     | CollapsedLists(array(string));
 
-  let parse = maybeStr : t =>
+  let parse = maybeStr: t =>
     (
       switch (maybeStr) {
       | Some(str) => Js.String.split("-", str)
       | None => [||]
       }
     )
-    |. CollapsedLists;
+    ->CollapsedLists;
 
   let stringify = (CollapsedLists(lists)) => Js.Array.joinWith("-", lists);
 
@@ -71,7 +71,7 @@ module Board = {
 
     <h2>
       <div style />
-      <span style=style'> (board.name |> ReasonReact.string) </span>
+      <span style=style'> {board.name |> ReasonReact.string} </span>
     </h2>;
   };
 
@@ -80,16 +80,16 @@ module Board = {
 
     let time = record |> TimeRecord.formatTodayRest(~blink=isCurrent);
 
-    <li key=card.id>
+    <li key={card.id}>
       <input
-        _type="radio"
+        type_="radio"
         name="current-card"
         checked=isCurrent
         onChange=onSelect
         id=elementId
       />
       <div>
-        <label htmlFor=elementId> (card.name |> ReasonReact.string) </label>
+        <label htmlFor=elementId> {card.name |> ReasonReact.string} </label>
         <p className=css##time> time </p>
       </div>
     </li>;
@@ -187,14 +187,14 @@ module Board = {
       let onStartResting = _ => self.send(SetCurrentCard(None));
 
       <div className=css##wrap>
-        <Favicon animated=(! isResting) />
+        <Favicon animated={!isResting} />
         <Next.Head> <title> title </title> </Next.Head>
-        (renderHeader(board))
+        {renderHeader(board)}
         <p className=css##time> totalTime </p>
         <ul>
           <li>
             <input
-              _type="radio"
+              type_="radio"
               name="current-card"
               id="current-card-radio__rest"
               checked=isResting
@@ -202,12 +202,12 @@ module Board = {
             />
             <div>
               <label htmlFor="current-card-radio__rest">
-                ("Rest..." |> ReasonReact.string)
+                {"Rest..." |> ReasonReact.string}
               </label>
             </div>
           </li>
         </ul>
-        (
+        {
           lists
           |> Js.Array.map((list: Trello.List.t) => {
                let isCollapsed =
@@ -218,19 +218,19 @@ module Board = {
 
                let toggleCollapse = _ => self.send(ToggleCollapsed(list.id));
 
-               <div key=list.id className=css##listWrap>
+               <div key={list.id} className=css##listWrap>
                  <h3>
-                   (list.name |> ReasonReact.string)
+                   {list.name |> ReasonReact.string}
                    <button
                      className=css##toggleCollapse onClick=toggleCollapse>
-                     (
+                     {
                        ReasonReact.string(
                          isCollapsed ? "[expand]" : "[collapse]",
                        )
-                     )
+                     }
                    </button>
                  </h3>
-                 (
+                 {
                    isCollapsed ?
                      ReasonReact.null :
                      cards
@@ -252,22 +252,22 @@ module Board = {
                           )
                         )
                      |> ReasonReact.array
-                 )
+                 }
                </div>;
              })
           |> ReasonReact.array
-        )
+        }
       </div>;
     },
   };
 
   let renderUninteractive = board =>
     <div className=css##wrap>
-      (renderHeader(board))
-      (
+      {renderHeader(board)}
+      {
         "Create the \"trkr\" custom field in the board before you can use it with TRKR."
         |> ReasonReact.string
-      )
+      }
     </div>;
 };
 

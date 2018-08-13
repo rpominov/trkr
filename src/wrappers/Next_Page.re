@@ -11,10 +11,10 @@ module InnerProps = {
   type t('a) = {data: 'a};
 };
 
-let decodeProps = (props: Props.t(SafePass.t('a))) : Props.t('a) =>
+let decodeProps = (props: Props.t(PreserveTags.t('a))): Props.t('a) =>
   Props.t(
-    ~data=SafePass.decode(props |. Props.data),
-    ~router=props |. Props.router,
+    ~data=PreserveTags.decode(props->Props.dataGet),
+    ~router=props->Props.routerGet,
   );
 
 let create =
@@ -39,9 +39,9 @@ let create =
   let loader' = ctx =>
     Js.Promise.(
       loader(ctx)
-      |> then_(x => InnerProps.t(~data=SafePass.encode(x)) |> resolve)
+      |> then_(x => InnerProps.t(~data=PreserveTags.encode(x)) |> resolve)
     );
 
-  Obj.magic(reactClass)##getInitialProps#=loader';
+  Obj.magic(reactClass)##getInitialProps #= loader';
   reactClass;
 };

@@ -1,1 +1,1 @@
-export {default} from "pages/login.bs";
+export {default} from "components/PageLogin.bs";

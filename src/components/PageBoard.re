@@ -5,7 +5,7 @@ let css: {
   "listWrap": string,
   "toggleCollapse": string,
 } = [%raw
-  {|require('pages/board.css')|}
+  {|require('components/PageBoard.css')|}
 ];
 
 let incrementBy = 10;

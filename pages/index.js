@@ -1,1 +1,1 @@
-export {default} from "pages/index.bs";
+export {default} from "components/PageIndex.bs";

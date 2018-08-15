@@ -1,1 +1,1 @@
-export {default} from "pages/board.bs";
+export {default} from "components/PageBoard.bs";

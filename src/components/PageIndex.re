@@ -1,4 +1,6 @@
-let css: {. "boardItem": string} = [%raw {|require('pages/index.css')|}];
+let css: {. "boardItem": string} = [%raw
+  {|require('components/PageIndex.css')|}
+];
 
 let renderBoard = (board: Trello.Board.t) => {
   let color = board.prefs.backgroundBrightness === "dark" ? "white" : "black";

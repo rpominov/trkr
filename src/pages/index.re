@@ -22,9 +22,9 @@ let renderBoard = (board: Trello.Board.t) => {
   };
 
   <li key={board.id} className=css##boardItem>
-    <Next.Link href>
+    <ReasonNext.Link href>
       <a style> {board.name |> ReasonReact.string} </a>
-    </Next.Link>
+    </ReasonNext.Link>
   </li>;
 };
 
@@ -35,7 +35,7 @@ let component = ReasonReact.statelessComponent("BoardsPage");
 let loader = Trello.fetchMyBoards() |> Trello.makeLoader;
 
 let default =
-  Next.Page.create(~component, ~loader, props =>
+  ReasonNext.createPage(~component, ~loader, props =>
     {
       ...component,
       render: _self =>

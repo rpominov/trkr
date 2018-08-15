@@ -149,8 +149,8 @@ module Board = {
           },
           (
             self =>
-              Next.writeCookie(
-                collapsedListsCookieName,
+              ReasonNext.writeCookie(
+                ~name=collapsedListsCookieName,
                 self.state.collapsedLists |> CollapsedLists.stringify,
               )
           ),
@@ -188,7 +188,7 @@ module Board = {
 
       <div className=css##wrap>
         <Favicon animated={!isResting} />
-        <Next.Head> <title> title </title> </Next.Head>
+        <ReasonNext.Head> <title> title </title> </ReasonNext.Head>
         {renderHeader(board)}
         <p className=css##time> totalTime </p>
         <ul>
@@ -317,7 +317,7 @@ let loader =
 let component = ReasonReact.statelessComponent("BoardPage");
 
 let default =
-  Next.Page.create(~component, ~loader, props =>
+  ReasonNext.createPage(~component, ~loader, props =>
     {
       ...component,
       render: _self =>

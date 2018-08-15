@@ -35,6 +35,8 @@ let make = (~animated=false, _children) => {
   },
   render: self => {
     let image = animated ? frames[self.state] : staticIcon;
-    <Next.Head> <link rel="icon" type_="image/png" href=image /> </Next.Head>;
+    <ReasonNext.Head>
+      <link rel="icon" type_="image/png" href=image />
+    </ReasonNext.Head>;
   },
 };

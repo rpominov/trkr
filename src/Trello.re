@@ -1,7 +1,7 @@
 [%raw "require('isomorphic-fetch')"];
 
 let appKey =
-  Js.Dict.get(Next.Config.(getConfig()->publicRuntimeConfigGet), "appKey");
+  Js.Dict.get(ReasonNext.Config.(getConfig()->publicRuntimeConfig), "appKey");
 
 type failure =
   | NotFound
@@ -14,7 +14,7 @@ type failure =
 
 module Monad = {
   type result('a) = PromiseResult.t('a, failure);
-  type t('a) = option(Next.LoadingContext.t) => result('a);
+  type t('a) = option(ReasonNext.LoadingContext.t) => result('a);
 
   let pure = (x: 'a): t('a) => _ => PromiseResult.ok(x);
   let error = (err: failure): t('a) => _ => PromiseResult.error(err);
@@ -25,7 +25,7 @@ module Monad = {
   let flatMap = (f: 'a => t('b), call: t('a)): t('b) =>
     ctx => call(ctx) |> PromiseResult.flatMap(x => f(x, ctx));
 
-  let withContext = (f: option(Next.LoadingContext.t) => 'a): t('a) =>
+  let withContext = (f: option(ReasonNext.LoadingContext.t) => 'a): t('a) =>
     context => PromiseResult.ok(f(context));
 };
 
@@ -34,7 +34,7 @@ let redirectToAuthentication = context => {
     [|
       ("name", "TRKR Time Tracker"),
       ("scope", "read,write"),
-      ("return_url", Next.getBaseUrl(~context?, ()) ++ "/login"),
+      ("return_url", ReasonNext.getBaseUrl(~context?, ()) ++ "/login"),
       ("key", appKey |> Js.Option.getExn),
     |]
     |> Js.Array.map(((k, v)) => k ++ "=" ++ Js.Global.encodeURIComponent(v));
@@ -42,7 +42,7 @@ let redirectToAuthentication = context => {
   let url =
     "https://trello.com/1/authorize?" ++ (params |> Js.Array.joinWith("&"));
 
-  Next.redirect(~context?, url);
+    ReasonNext.redirect(~context?, url);
 };
 
 let handleSomeErrors = (context, result: Monad.result('a)): Monad.result('a) =>
@@ -50,7 +50,7 @@ let handleSomeErrors = (context, result: Monad.result('a)): Monad.result('a) =>
   |> PromiseResult.flatMapError(err => {
        switch (err) {
        | Unauthenticated => redirectToAuthentication(context)
-       | NotFound => Next.setResponseStatusCode(~context?, 404)
+       | NotFound => ReasonNext.setStatusCode(~context?, 404)
        | _ => ()
        };
        PromiseResult.error(err);
@@ -69,7 +69,7 @@ let fetch =
     )
     : Monad.t('a) =>
   context => {
-    let token = Js.Dict.get(Next.readCookie(~context?, ()), "token");
+    let token = Js.Dict.get(ReasonNext.readCookie(~context?, ()), "token");
 
     switch (token, appKey) {
     | (_, None) => PromiseResult.error(AppKeyIsNotSet)
@@ -319,7 +319,7 @@ let getQueryParam = key =>
   Monad.(
     withContext(context =>
       Js.Dict.get(
-        (context |> Js.Option.getExn)->Next.LoadingContext.queryGet,
+        (context |> Js.Option.getExn)->ReasonNext.LoadingContext.query,
         key,
       )
     )
@@ -331,5 +331,5 @@ let getQueryParam = key =>
   );
 
 let getCookie = (key: string) =>
-  Monad.withContext(context => Next.readCookie(~context?, ()))
+  Monad.withContext(context => ReasonNext.readCookie(~context?, ()))
   |> Monad.map(cookies => Js.Dict.get(cookies, key));

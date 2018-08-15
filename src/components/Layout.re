@@ -24,24 +24,25 @@ let make = (children: array(ReasonReact.reactElement)) => {
     | SetLoadingStop => Update(false)
     },
   didMount: self => {
-    open Next.Router;
-    let start = Js.Nullable.return(() => self.send(SetLoadingStart));
-    let stop = Js.Nullable.return(() => self.send(SetLoadingStop));
-    onRouteChangeStartSet(router, start);
-    onRouteChangeCompleteSet(router, stop);
-    onRouteChangeErrorSet(router, stop);
+    let start = Some(() => self.send(SetLoadingStart));
+    let stop = Some(() => self.send(SetLoadingStop));
+    ReasonNext.Router.onRouteChangeStart(start);
+    ReasonNext.Router.onRouteChangeComplete(stop);
+    ReasonNext.Router.onRouteChangeError(stop);
     self.onUnmount(() => {
-      onRouteChangeStartSet(router, Js.Nullable.null);
-      onRouteChangeCompleteSet(router, Js.Nullable.null);
-      onRouteChangeErrorSet(router, Js.Nullable.null);
+      ReasonNext.Router.onRouteChangeStart(None);
+      ReasonNext.Router.onRouteChangeComplete(None);
+      ReasonNext.Router.onRouteChangeError(None);
     });
   },
   render: self =>
     <div className=css##layoutWrap>
       <Favicon />
-      <Next.Head> <title> {ReasonReact.string("TRKR")} </title> </Next.Head>
+      <ReasonNext.Head>
+        <title> {ReasonReact.string("TRKR")} </title>
+      </ReasonNext.Head>
       <header className=css##header>
-        <Next.Link href="/">
+        <ReasonNext.Link href="/">
           <a>
             <h1 className=css##title>
               {
@@ -50,7 +51,7 @@ let make = (children: array(ReasonReact.reactElement)) => {
               }
             </h1>
           </a>
-        </Next.Link>
+        </ReasonNext.Link>
         <UntrackedTime />
       </header>
       <main> {ReasonReact.array(children)} </main>

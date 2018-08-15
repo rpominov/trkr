@@ -1,20 +1,20 @@
 let component = ReasonReact.reducerComponent("Login");
 
 let default =
-  Next.Page.create(
+  ReasonNext.createPage(
     ~component,
     ~loader=_ => Js.Promise.resolve(),
-    props => (
+    _props => (
       {
         ...component,
         didMount: _ => {
-          let asPath = props->Next.Page.Props.routerGet->Next.Router.asPathGet;
+          let asPath = ReasonNext.Router.router->ReasonNext.Router.asPath;
           switch (asPath |> Js.String.split("#")) {
           | [|_, hash|] =>
             switch (hash |> Js.String.split("=")) {
             | [|"token", value|] =>
-              Next.writeCookie("token", value);
-              Next.redirect("/");
+              ReasonNext.writeCookie(~name="token", value);
+              ReasonNext.redirect("/");
             | _ => ()
             }
           | _ => ()

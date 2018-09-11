@@ -12,7 +12,7 @@
     "@rpominov/reason-next": "^0.1.0",
     "@zeit/next-css": "^0.2.0",
     "bs-fetch": "^0.3.0",
-    "bs-platform": "^4.0.4",
+    "bs-platform": "^4.0.5",
     "cookie": "^0.3.1",
     "isomorphic-unfetch": "^2.0.0",
     "next": "^6.1.1",

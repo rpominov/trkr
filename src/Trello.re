@@ -42,7 +42,7 @@ let redirectToAuthentication = context => {
   let url =
     "https://trello.com/1/authorize?" ++ (params |> Js.Array.joinWith("&"));
 
-    ReasonNext.redirect(~context?, url);
+  ReasonNext.redirect(~context?, url);
 };
 
 let handleSomeErrors = (context, result: Monad.result('a)): Monad.result('a) =>
@@ -157,21 +157,33 @@ module Board = {
           id: x |> field("id") @@ string,
         }
       );
+
+    let encode = (~boardId: string, ~fieldName: string) =>
+      Json.Encode.(
+        object_([
+          ("idModel", boardId->string),
+          ("modelType", "board"->string),
+          ("name", fieldName->string),
+          ("type", "text"->string),
+        ])
+      );
   };
 
   type t = {
     name: string,
+    url: string,
     id: string,
     prefs: Prefs.t,
     customFields: option(array(CustomField.t)),
   };
 
-  let requestParams = [|("fields", "name,id,prefs")|];
+  let requestParams = [|("fields", "name,id,prefs,url")|];
 
   let decoder =
     Json.Decode.(
       x => {
         name: x |> field("name") @@ string,
+        url: x |> field("url") @@ string,
         id: x |> field("id") @@ string,
         prefs: x |> field("prefs") @@ Prefs.decoder,
         customFields:
@@ -315,13 +327,21 @@ let setCustomField = (~cardId: string, ~fieldId: string, ~newValue: string) =>
     "cards/" ++ cardId ++ "/customField/" ++ fieldId ++ "/item",
   );
 
+let createTrkrField = (~boardId: string) =>
+  fetch(
+    ~decoder=Board.CustomField.decoder,
+    ~method=Fetch.Post,
+    ~body=Board.CustomField.encode(~boardId, ~fieldName="trkr"),
+    "customFields/",
+  );
+
 let getQueryParam = key =>
   Monad.(
     withContext(context =>
-      Js.Dict.get(
-        (context |> Js.Option.getExn)->ReasonNext.LoadingContext.query,
-        key,
-      )
+      context
+      ->Js.Option.getExn
+      ->ReasonNext.LoadingContext.query
+      ->Js.Dict.get(key)
     )
     |> flatMap(
          fun

@@ -5,7 +5,7 @@ module Process = {
   [@bs.val] external process: t = "";
 
   let inBrowser =
-    switch (process->browserGet |> Js.Nullable.toOption) {
+    switch (process |> browserGet |> Js.Nullable.toOption) {
     | Some(x) => x
     | None => false
     };

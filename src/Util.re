@@ -16,3 +16,5 @@ let reExec = (re, str) =>
   };
 
 let debug: unit => unit = [%raw {|() => {debugger}|}];
+
+let reloadPage: unit => unit = [%raw {|() => {location.reload()}|}];

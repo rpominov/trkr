@@ -4,6 +4,9 @@ let css: {
   "time": string,
   "listWrap": string,
   "toggleCollapse": string,
+  "createField": string,
+  "createBoardError": string,
+  "link": string,
 } = [%raw
   {|require('components/PageBoard.css')|}
 ];
@@ -260,15 +263,119 @@ module Board = {
       </div>;
     },
   };
+};
 
-  let renderUninteractive = board =>
-    <div className=css##wrap>
-      {renderHeader(board)}
-      {
-        "Create the \"trkr\" custom field in the board before you can use it with TRKR."
-        |> ReasonReact.string
-      }
-    </div>;
+module WithoutCustomField = {
+  type state =
+    | NotRequested
+    | InProgress
+    | Done
+    | Failed(option(ReasonReact.reactElement));
+
+  type action =
+    | CreateField
+    | CreateFieldResult(
+        Belt.Result.t(Trello.Board.CustomField.t, Trello.failure),
+      );
+
+  let component = ReasonReact.reducerComponent("WithoutCustomField");
+
+  let make = (~board: Trello.Board.t, _children) => {
+    ...component,
+    initialState: () => NotRequested,
+    reducer: (action: action, state: state) =>
+      switch (action) {
+      | CreateField =>
+        switch (state) {
+        | NotRequested
+        | Failed(_) =>
+          UpdateWithSideEffects(
+            InProgress,
+            (
+              self =>
+                Trello.createTrkrField(~boardId=board.id, None)
+                |> PromiseResult.consumeResult(r =>
+                     self.send(CreateFieldResult(r))
+                   )
+            ),
+          )
+        | InProgress
+        | Done => NoUpdate
+        }
+      | CreateFieldResult(result) =>
+        switch (result) {
+        | Ok(_) => UpdateWithSideEffects(Done, (_self => Util.reloadPage()))
+        | Error(error) =>
+          Update(
+            Failed(
+              switch (error) {
+              | BadStatus(code) =>
+                code === 403 ?
+                  Some(
+                    <span>
+                      "Make sure "->ReasonReact.string
+                      <a
+                        className=css##link
+                        target="_blank"
+                        href={
+                          board.url ++ "/power-up/56d5e249a98895a9797bebb9"
+                        }>
+                        "Custom Fields Power-Up"->ReasonReact.string
+                      </a>
+                      " is enabled for this board."->ReasonReact.string
+                    </span>,
+                  ) :
+                  None
+              | CustomFailure(message) => Some(message->ReasonReact.string)
+              | NotFound
+              | AppKeyIsNotSet
+              | Unauthenticated
+              | NetworkProblem
+              | BadResponseBody(_) => None
+              },
+            ),
+          )
+        }
+      },
+    render: self =>
+      <div className=css##wrap>
+        {Board.renderHeader(board)}
+        <p>
+          "This Trello board doesn't have the \"trkr\" custom field yet."
+          ->ReasonReact.string
+        </p>
+        <button
+          className=css##createField
+          disabled={self.state === InProgress || self.state === Done}
+          onClick={_ => self.send(CreateField)}>
+          {
+            switch (self.state) {
+            | NotRequested =>
+              "Create \"trkr\" custom field"->ReasonReact.string
+            | InProgress =>
+              <span>
+                <Distorted text="Working" />
+                "..."->ReasonReact.string
+              </span>
+            | Done =>
+              <span>
+                "Done! "->ReasonReact.string
+                <Distorted text="Reloading" />
+                "..."->ReasonReact.string
+              </span>
+            | Failed(_) => "Failed. Try again"->ReasonReact.string
+            }
+          }
+        </button>
+        {
+          switch (self.state) {
+          | Failed(Some(err)) =>
+            <span className=css##createBoardError> err </span>
+          | _ => ReasonReact.null
+          }
+        }
+      </div>,
+  };
 };
 
 type data =
@@ -323,7 +430,7 @@ let default =
       render: _self =>
         ErrorPage.renderError(props, data =>
           switch (data) {
-          | WithoutTrkrField(board) => Board.renderUninteractive(board)
+          | WithoutTrkrField(board) => <WithoutCustomField board />
           | WithTrkrField(fieldId, board, lists, cards, collapsedLists) =>
             <Board fieldId board lists cards collapsedLists />
           }

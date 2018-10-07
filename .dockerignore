@@ -1,0 +1,9 @@
+.next
+config.js
+.merlin
+.bsb.lock
+npm-debug.log
+/lib
+/node_modules/
+Dockerfile
+.git
